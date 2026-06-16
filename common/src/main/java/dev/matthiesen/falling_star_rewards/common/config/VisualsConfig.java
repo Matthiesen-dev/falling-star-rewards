@@ -9,16 +9,16 @@ public final class VisualsConfig {
     public boolean enabled = true;
 
     @SerializedName("particlePreset")
-    public String particlePreset = "ash";
+    public String particlePreset = "end_rod";
 
     @SerializedName("fallDistance")
     public int fallDistance = 10;
 
     @SerializedName("emissionIntervalTicks")
-    public int emissionIntervalTicks = 2;
+    public int emissionIntervalTicks = 3;
 
     @SerializedName("particlesPerEmission")
-    public int particlesPerEmission = 5;
+    public int particlesPerEmission = 2;
 
     @SerializedName("impactBurstEnabled")
     public boolean impactBurstEnabled = true;
