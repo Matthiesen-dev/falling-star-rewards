@@ -1,20 +1,17 @@
-# template-cobblemon-sidemod
+# falling-star-rewards
 
 <div>
   <img src="https://mods.matthiesen.dev/badges/matthiesenLibAPI.svg" alt="Matthiesen Lib API">
-  <img src="https://mods.matthiesen.dev/badges/cobblemon.svg" alt="Cobblemon">
 </div>
 
-Template for a Cobblemon side mod. This template includes the necessary setup for a mod that depends on the Matthiesen Lib API and Cobblemon, 
-but does not include any specific functionality. You can use this as a starting point for creating your own Cobblemon side mod.
+A Server-side mod that adds falling stars to the world, which can drop a variety of items where they land.
 
 ## Requirements
 - [Matthiesen Lib API](https://modrinth.com/mod/matthiesen-lib-api)
-- [Cobblemon](https://modrinth.com/mod/cobblemon)
 
 ## Docs
 
-Documentation for this mod can be found at [mods.matthiesen.dev](https://mods.matthiesen.dev/TODO/)
+Documentation for this mod can be found at [mods.matthiesen.dev](https://mods.matthiesen.dev/falling-star-rewards/)
 
 ## Version Compatibility
 
