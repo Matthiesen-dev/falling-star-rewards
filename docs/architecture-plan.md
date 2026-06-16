@@ -4,24 +4,11 @@
 - Run entirely server-side (no custom client dependency required).
 - Spawn star reward opportunities around players on a configurable schedule.
 - Keep balancing and reward tuning in config so pack/server owners can iterate quickly.
-- Share almost all gameplay logic in `common` for Fabric + NeoForge.
+- Custom animated star entities and custom client rendering.
 
 ## Non-Goals (v1)
-- Custom animated star entities and custom client rendering.
 - Per-biome or per-dimension reward pools beyond simple allow/deny filters.
 - Complex anti-cheese systems (basic spawn safety checks only in v1).
-
-## Module Structure
-- `common`
-  - Config schema and loading (`MainConfig`).
-  - Runtime scheduling and event orchestration (`StarEventOrchestrator`).
-  - Reward selection logic and spawn candidate selection (next implementation pass).
-- `fabric`
-  - Mod initialization.
-  - Tick and lifecycle callbacks forwarded into `common`.
-- `neoforge`
-  - Mod initialization.
-  - Tick and lifecycle callbacks forwarded into `common`.
 
 ## Runtime Flow (Target)
 1. Every server tick, loader callback calls `FallingStarRewards.onServerTick(gameTick)`.
@@ -36,9 +23,9 @@
   - Tracks next cycle tick and computes interval with jitter.
 - `SpawnSelector` (planned)
   - Chooses candidate locations with safety and radius constraints.
-- `RewardRoller` (planned)
+- `RewardRoller` 
   - Picks a weighted reward entry and stack size.
-- `StarLifecycleService` (planned)
+- `StarLifecycleService`
   - Creates star drop, handles despawn timeout, and tracks active events.
 
 Current implementation note: active item drops are tracked and explicitly discarded when `claim.lifeTicks` is reached.
@@ -128,11 +115,4 @@ Current implementation in `MainConfig` introduces these sections:
   }
 }
 ```
-
-## Implementation Phases
-- Phase 1 (current): Config contract + scheduler foundation.
-- Phase 2: Loader tick hooks + player/world eligibility checks.
-- Phase 3: Spawn location selection + weighted reward generation.
-- Phase 4: Active star lifecycle tracking + despawn cleanup.
-- Phase 5: Commands/admin tooling (`reload`, debug mode, force spawn).
 
