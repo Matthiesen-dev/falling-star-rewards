@@ -16,12 +16,18 @@ public class FallingStarRewards extends AbstractCommonMod {
     }
 
     @Override
+    public void initialize() {
+        super.initialize();
+        createInfoLog("Initializing Falling Star Rewards");
+    }
+
+    @Override
     public @Nullable @Token String getMetricsToken() {
         return METRICS_TOKEN;
     }
 
     @Override
     public Runnable reload() {
-        return null;
+        return () -> {};
     }
 }
