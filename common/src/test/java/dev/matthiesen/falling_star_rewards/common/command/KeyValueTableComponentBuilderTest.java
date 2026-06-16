@@ -31,5 +31,21 @@ class KeyValueTableComponentBuilderTest {
         assertTrue(rendered.contains("[ Status ]"));
         assertTrue(rendered.contains("<unset>"));
     }
+
+    @Test
+    void sectionsAreRenderedWithHeaders() {
+        String rendered = new KeyValueTableComponentBuilder("Demo")
+                .addSection("Runtime")
+                .addRow("Enabled", "true")
+                .addSection("Visuals")
+                .addRow("Preset", "ash")
+                .build()
+                .getString();
+
+        assertTrue(rendered.contains("[Runtime]"));
+        assertTrue(rendered.contains("[Visuals]"));
+        assertTrue(rendered.contains("Enabled"));
+        assertTrue(rendered.contains("Preset"));
+    }
 }
 
