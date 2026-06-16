@@ -64,6 +64,9 @@ public final class FallingStarCommand extends AbstractCommand {
     private Component buildStatusTable(boolean full) {
         var mod = FallingStarRewards.INSTANCE;
         var config = mod.getMainConfig();
+        var rewardsConfig = mod.getRewardsConfig();
+        var visualsConfig = mod.getVisualsConfig();
+        var announcementsConfig = mod.getAnnouncementsConfig();
 
         KeyValueTableComponentBuilder builder = new KeyValueTableComponentBuilder(
                 full ? "Falling Star Rewards Status (Full)" : "Falling Star Rewards Status"
@@ -81,11 +84,11 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
                 .addRow("Pickup Delay", Integer.toString(config.claim.pickupDelayTicks))
                 .addSection("Visuals")
-                .addRow("Particle Preset", config.visuals.particlePreset)
-                .addRow("Impact Preset", config.visuals.impactParticlePreset)
+                .addRow("Particle Preset", visualsConfig.particlePreset)
+                .addRow("Impact Preset", visualsConfig.impactParticlePreset)
                 .addSection("Audio")
-                .addRow("Impact Sound", config.visuals.impactSoundId)
-                .addRow("Travel Sound", config.visuals.travelSoundId);
+                .addRow("Impact Sound", visualsConfig.impactSoundId)
+                .addRow("Travel Sound", visualsConfig.travelSoundId);
 
         if (full) {
             builder
@@ -100,30 +103,30 @@ public final class FallingStarCommand extends AbstractCommand {
                     .addRow("Location Attempts", Integer.toString(config.spawn.maxLocationAttempts))
                     .addRow("Allow Water", Boolean.toString(config.spawn.allowWaterSpawns))
                     .addSection("Announcements")
-                    .addRow("Enabled", Boolean.toString(config.announcements.enabled))
-                    .addRow("Scope", config.announcements.scope)
-                    .addRow("Message", config.announcements.spawnMessage)
+                    .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))
+                    .addRow("Scope", announcementsConfig.scope)
+                    .addRow("Message", announcementsConfig.spawnMessage)
                     .addSection("Visual FX")
-                    .addRow("Trail Enabled", Boolean.toString(config.visuals.enabled))
-                    .addRow("Trail Distance", Integer.toString(config.visuals.fallDistance))
-                    .addRow("Trail Interval", Integer.toString(config.visuals.emissionIntervalTicks))
-                    .addRow("Trail Count", Integer.toString(config.visuals.particlesPerEmission))
-                    .addRow("Impact Burst", Boolean.toString(config.visuals.impactBurstEnabled))
-                    .addRow("Impact Count", Integer.toString(config.visuals.impactParticleCount))
-                    .addRow("Impact Spread", Double.toString(config.visuals.impactSpread))
+                    .addRow("Trail Enabled", Boolean.toString(visualsConfig.enabled))
+                    .addRow("Trail Distance", Integer.toString(visualsConfig.fallDistance))
+                    .addRow("Trail Interval", Integer.toString(visualsConfig.emissionIntervalTicks))
+                    .addRow("Trail Count", Integer.toString(visualsConfig.particlesPerEmission))
+                    .addRow("Impact Burst", Boolean.toString(visualsConfig.impactBurstEnabled))
+                    .addRow("Impact Count", Integer.toString(visualsConfig.impactParticleCount))
+                    .addRow("Impact Spread", Double.toString(visualsConfig.impactSpread))
                     .addSection("Audio Detail")
-                    .addRow("Impact Enabled", Boolean.toString(config.visuals.impactSoundEnabled))
-                    .addRow("Impact Volume", Float.toString(config.visuals.impactSoundVolume))
-                    .addRow("Impact Pitch Min", Float.toString(config.visuals.impactSoundPitchMin))
-                    .addRow("Impact Pitch Max", Float.toString(config.visuals.impactSoundPitchMax))
-                    .addRow("Travel Enabled", Boolean.toString(config.visuals.travelSoundEnabled))
-                    .addRow("Travel Volume", Float.toString(config.visuals.travelSoundVolume))
-                    .addRow("Travel Pitch Min", Float.toString(config.visuals.travelSoundPitchMin))
-                    .addRow("Travel Pitch Max", Float.toString(config.visuals.travelSoundPitchMax))
-                    .addRow("Travel Interval", Integer.toString(config.visuals.travelSoundIntervalTicks))
+                    .addRow("Impact Enabled", Boolean.toString(visualsConfig.impactSoundEnabled))
+                    .addRow("Impact Volume", Float.toString(visualsConfig.impactSoundVolume))
+                    .addRow("Impact Pitch Min", Float.toString(visualsConfig.impactSoundPitchMin))
+                    .addRow("Impact Pitch Max", Float.toString(visualsConfig.impactSoundPitchMax))
+                    .addRow("Travel Enabled", Boolean.toString(visualsConfig.travelSoundEnabled))
+                    .addRow("Travel Volume", Float.toString(visualsConfig.travelSoundVolume))
+                    .addRow("Travel Pitch Min", Float.toString(visualsConfig.travelSoundPitchMin))
+                    .addRow("Travel Pitch Max", Float.toString(visualsConfig.travelSoundPitchMax))
+                    .addRow("Travel Interval", Integer.toString(visualsConfig.travelSoundIntervalTicks))
                     .addSection("Rewards")
-                    .addRow("Pool Mode", config.rewards.poolMode)
-                    .addRow("Total Entries", Integer.toString(config.rewards.entries.length))
+                    .addRow("Pool Mode", rewardsConfig.poolMode)
+                    .addRow("Total Entries", Integer.toString(rewardsConfig.entries.length))
                     .addRow("Valid Entries", Integer.toString(mod.getRewardValidator().getValidEntries()))
                     .addRow("Invalid Entries", Integer.toString(mod.getRewardValidator().getInvalidEntries()));
         }

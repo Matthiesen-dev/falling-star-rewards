@@ -4,7 +4,10 @@ import dev.matthiesen.common.matthiesen_lib_api.abstracts.AbstractCommonMod;
 import dev.matthiesen.common.matthiesen_lib_api.config.ConfigManager;
 import dev.matthiesen.common.matthiesen_lib_api.core.interfaces.MatthiesenLibServerEventHandler;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
+import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.RewardsConfig;
+import dev.matthiesen.falling_star_rewards.common.config.VisualsConfig;
 import dev.matthiesen.falling_star_rewards.common.runtime.StarEventOrchestrator;
 import dev.matthiesen.falling_star_rewards.common.runtime.StarEventService;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
@@ -19,8 +22,15 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
     public static final FallingStarRewards INSTANCE = new FallingStarRewards();
 
+    private final ConfigManager<AnnouncementsConfig> ANNOUNCEMENTS_CONFIG_MANAGER =
+            createConfigManager(AnnouncementsConfig.class, "announcements");
     private final ConfigManager<MainConfig> MAIN_CONFIG_MANAGER =
             createConfigManager(MainConfig.class, "config");
+    private final ConfigManager<RewardsConfig> REWARDS_CONFIG_MANAGER =
+            createConfigManager(RewardsConfig.class, "rewards");
+    private final ConfigManager<VisualsConfig> VISUALS_CONFIG_MANAGER =
+            createConfigManager(VisualsConfig.class, "visuals");
+
     private final StarEventOrchestrator orchestrator = new StarEventOrchestrator();
     private final StarEventService starEventService = new StarEventService();
     private final RewardValidator rewardValidator = new RewardValidator();
@@ -46,9 +56,13 @@ public final class FallingStarRewards extends AbstractCommonMod {
     @Override
     public Runnable reload() {
         return () -> {
+            ANNOUNCEMENTS_CONFIG_MANAGER.loadConfig();
             MAIN_CONFIG_MANAGER.loadConfig();
+            REWARDS_CONFIG_MANAGER.loadConfig();
+            VISUALS_CONFIG_MANAGER.loadConfig();
             MainConfig config = getMainConfig();
-            rewardValidator.validateRewards(config);
+            RewardsConfig rewardsConfig = getRewardsConfig();
+            rewardValidator.validateRewards(rewardsConfig);
             for (String message : rewardValidator.getValidationMessages()) {
                 createWarnLog(message);
             }
@@ -67,12 +81,24 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return MAIN_CONFIG_MANAGER.getConfig();
     }
 
+    public RewardsConfig getRewardsConfig() {
+        return REWARDS_CONFIG_MANAGER.getConfig();
+    }
+
+    public VisualsConfig getVisualsConfig() {
+        return VISUALS_CONFIG_MANAGER.getConfig();
+    }
+
+    public AnnouncementsConfig getAnnouncementsConfig() {
+        return ANNOUNCEMENTS_CONFIG_MANAGER.getConfig();
+    }
+
     public long getNextCycleTick() {
         return orchestrator.getNextCycleTick();
     }
 
     public int forceCycle(MinecraftServer server, int maxStars, boolean bypassActivationChecks) {
-        return starEventService.runCycle(server, getMainConfig(), maxStars, bypassActivationChecks);
+        return starEventService.runCycle(server, getMainConfig(), getRewardsConfig(), getVisualsConfig(), getAnnouncementsConfig(), maxStars, bypassActivationChecks);
     }
 
     public int getActiveDropCount() {
@@ -97,10 +123,13 @@ public final class FallingStarRewards extends AbstractCommonMod {
             @Override
             public void onServerTick(MinecraftServer server) {
                 MainConfig config = getMainConfig();
-                starEventService.onServerTick(server, config);
+                RewardsConfig rewardsConfig = getRewardsConfig();
+                VisualsConfig visualsConfig = getVisualsConfig();
+                AnnouncementsConfig announcementsConfig = getAnnouncementsConfig();
+                starEventService.onServerTick(server, visualsConfig);
                 var gameTick = server.getTickCount();
                 if (orchestrator.shouldStartCycle(gameTick, config)) {
-                    int spawned = starEventService.runCycle(server, config);
+                    int spawned = starEventService.runCycle(server, config, rewardsConfig, visualsConfig, announcementsConfig);
                     if (spawned > 0) {
                         createInfoLog("Starting star cycle at tick " + gameTick + " (spawned=" + spawned + ")");
                     }

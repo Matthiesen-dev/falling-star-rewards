@@ -1,7 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import dev.matthiesen.falling_star_rewards.common.config.RewardsConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
@@ -16,18 +16,18 @@ public final class RewardValidator {
     private int invalidEntries = 0;
     private final List<String> validationMessages = new ArrayList<>();
 
-    public void validateRewards(MainConfig config) {
+    public void validateRewards(RewardsConfig config) {
         validEntries = 0;
         invalidEntries = 0;
         validationMessages.clear();
 
-        if (config.rewards.entries == null || config.rewards.entries.length == 0) {
+        if (config.entries == null || config.entries.length == 0) {
             validationMessages.add("No reward entries configured.");
             return;
         }
 
-        for (int i = 0; i < config.rewards.entries.length; i++) {
-            MainConfig.RewardEntry entry = config.rewards.entries[i];
+        for (int i = 0; i < config.entries.length; i++) {
+            RewardsConfig.RewardEntry entry = config.entries[i];
             if (validateEntry(entry, i)) {
                 validEntries++;
             } else {
@@ -37,7 +37,7 @@ public final class RewardValidator {
 
     }
 
-    private boolean validateEntry(MainConfig.RewardEntry entry, int index) {
+    private boolean validateEntry(RewardsConfig.RewardEntry entry, int index) {
         if (entry == null) {
                     validationMessages.add("Reward entry " + index + " is null");
             return false;
