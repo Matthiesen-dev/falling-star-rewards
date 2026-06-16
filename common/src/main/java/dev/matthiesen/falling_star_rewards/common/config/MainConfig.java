@@ -23,6 +23,9 @@ public final class MainConfig {
     @SerializedName("announcements")
     public Announcements announcements = new Announcements();
 
+    @SerializedName("visuals")
+    public Visuals visuals = new Visuals();
+
     @SerializedName("rewards")
     public Rewards rewards = new Rewards();
 
@@ -91,6 +94,68 @@ public final class MainConfig {
 
         @SerializedName("spawnMessage")
         public String spawnMessage = "A falling star has appeared nearby!";
+    }
+
+    public static final class Visuals {
+        @SerializedName("enabled")
+        public boolean enabled = true;
+
+        @SerializedName("particlePreset")
+        public String particlePreset = "ash";
+
+        @SerializedName("fallDistance")
+        public int fallDistance = 10;
+
+        @SerializedName("emissionIntervalTicks")
+        public int emissionIntervalTicks = 2;
+
+        @SerializedName("particlesPerEmission")
+        public int particlesPerEmission = 5;
+
+        @SerializedName("impactBurstEnabled")
+        public boolean impactBurstEnabled = true;
+
+        @SerializedName("impactParticlePreset")
+        public String impactParticlePreset = "firework";
+
+        @SerializedName("impactParticleCount")
+        public int impactParticleCount = 14;
+
+        @SerializedName("impactSpread")
+        public double impactSpread = 0.4D;
+
+        @SerializedName("impactSoundEnabled")
+        public boolean impactSoundEnabled = true;
+
+        @SerializedName("impactSoundId")
+        public String impactSoundId = "minecraft:entity.firework_rocket.twinkle";
+
+        @SerializedName("impactSoundVolume")
+        public float impactSoundVolume = 0.8F;
+
+        @SerializedName("impactSoundPitchMin")
+        public float impactSoundPitchMin = 0.9F;
+
+        @SerializedName("impactSoundPitchMax")
+        public float impactSoundPitchMax = 1.2F;
+
+        @SerializedName("travelSoundEnabled")
+        public boolean travelSoundEnabled = true;
+
+        @SerializedName("travelSoundId")
+        public String travelSoundId = "minecraft:entity.phantom.flap";
+
+        @SerializedName("travelSoundVolume")
+        public float travelSoundVolume = 0.12F;
+
+        @SerializedName("travelSoundPitchMin")
+        public float travelSoundPitchMin = 1.3F;
+
+        @SerializedName("travelSoundPitchMax")
+        public float travelSoundPitchMax = 1.7F;
+
+        @SerializedName("travelSoundIntervalTicks")
+        public int travelSoundIntervalTicks = 12;
     }
 
     public static final class Rewards {

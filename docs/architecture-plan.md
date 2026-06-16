@@ -55,6 +55,25 @@ Current implementation in `MainConfig` introduces these sections:
   - `enabled`: show spawn message.
   - `scope`: `nearby | global`.
   - `spawnMessage`: chat message on spawn.
+- `visuals`
+  - `enabled`: toggles falling-star particle trail above active drops.
+  - `particlePreset`: `end_rod | ash | glow | firework`.
+  - `fallDistance`: vertical distance above drop where the trail starts.
+  - `emissionIntervalTicks`: particle emission cadence.
+  - `particlesPerEmission`: amount of particles emitted per cadence.
+  - `impactBurstEnabled`: toggles one-shot particle burst on spawn.
+  - `impactParticlePreset`: preset used for the landing burst.
+  - `impactParticleCount`: number of burst particles.
+  - `impactSpread`: horizontal/vertical spread for burst particles.
+  - `impactSoundEnabled`: toggles one-shot landing sound on spawn.
+  - `impactSoundId`: sound event id (for example `minecraft:entity.firework_rocket.twinkle`).
+  - `impactSoundVolume`: sound volume.
+  - `impactSoundPitchMin` and `impactSoundPitchMax`: random pitch range per impact.
+  - `travelSoundEnabled`: toggles low-volume whoosh audio while trail is active.
+  - `travelSoundId`: sound event id for whoosh loop.
+  - `travelSoundVolume`: whoosh volume.
+  - `travelSoundPitchMin` and `travelSoundPitchMax`: random pitch range for whoosh.
+  - `travelSoundIntervalTicks`: cadence for whoosh playback while active.
 - `rewards`
   - `poolMode`: currently `weighted`.
   - `entries`: weighted rewards with count range.
@@ -89,6 +108,28 @@ Current implementation in `MainConfig` introduces these sections:
     "enabled": true,
     "scope": "nearby",
     "spawnMessage": "A falling star has appeared nearby!"
+  },
+  "visuals": {
+    "enabled": true,
+    "particlePreset": "end_rod",
+    "fallDistance": 10,
+    "emissionIntervalTicks": 2,
+    "particlesPerEmission": 5,
+    "impactBurstEnabled": true,
+    "impactParticlePreset": "firework",
+    "impactParticleCount": 14,
+    "impactSpread": 0.35,
+    "impactSoundEnabled": true,
+    "impactSoundId": "minecraft:entity.firework_rocket.twinkle",
+    "impactSoundVolume": 0.8,
+    "impactSoundPitchMin": 0.9,
+    "impactSoundPitchMax": 1.2,
+    "travelSoundEnabled": false,
+    "travelSoundId": "minecraft:entity.phantom.flap",
+    "travelSoundVolume": 0.12,
+    "travelSoundPitchMin": 1.3,
+    "travelSoundPitchMax": 1.7,
+    "travelSoundIntervalTicks": 12
   },
   "rewards": {
     "poolMode": "weighted",

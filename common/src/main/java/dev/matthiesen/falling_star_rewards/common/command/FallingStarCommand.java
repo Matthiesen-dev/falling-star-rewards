@@ -44,14 +44,20 @@ public final class FallingStarCommand extends AbstractCommand {
     public int status(CommandContext<CommandSourceStack> context) {
         var mod = FallingStarRewards.INSTANCE;
         var config = mod.getMainConfig();
-        context.getSource().sendSystemMessage(Component.literal(
-                "enabled=" + config.enabled
-                        + ", baseIntervalTicks=" + config.scheduler.baseIntervalTicks
-                        + ", nextCycleTick=" + mod.getNextCycleTick()
-                        + ", activeDrops=" + mod.getActiveDropCount()
-                        + ", lifeTicks=" + config.claim.lifeTicks
-                        + ", maxActiveDrops=" + config.claim.maxActiveDrops
-        ));
+        Component statusTable = new KeyValueTableComponentBuilder("Falling Star Rewards Status")
+                .addRow("Enabled", Boolean.toString(config.enabled))
+                .addRow("Base Interval (ticks)", Integer.toString(config.scheduler.baseIntervalTicks))
+                .addRow("Next Cycle Tick", Long.toString(mod.getNextCycleTick()))
+                .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()))
+                .addRow("Life Ticks", Integer.toString(config.claim.lifeTicks))
+                .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
+                .addRow("Particle Preset", config.visuals.particlePreset)
+                .addRow("Impact Preset", config.visuals.impactParticlePreset)
+                .addRow("Impact Sound", config.visuals.impactSoundId)
+                .addRow("Travel Sound", config.visuals.travelSoundId)
+                .build();
+
+        context.getSource().sendSystemMessage(statusTable);
         return 1;
     }
 

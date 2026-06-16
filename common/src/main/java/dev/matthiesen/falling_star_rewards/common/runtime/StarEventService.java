@@ -2,6 +2,8 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -9,6 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -31,7 +35,7 @@ public final class StarEventService {
     private final RewardRoller rewardRoller = new RewardRoller();
     private final Map<UUID, ActiveStarDrop> activeDrops = new HashMap<>();
 
-    public void onServerTick(MinecraftServer server) {
+    public void onServerTick(MinecraftServer server, MainConfig config) {
         if (activeDrops.isEmpty()) {
             return;
         }
@@ -51,6 +55,11 @@ public final class StarEventService {
             if (tick >= activeDrop.expireTick()) {
                 entity.discard();
                 toRemove.add(entityId);
+                continue;
+            }
+
+            if (entity.level() instanceof ServerLevel level) {
+                emitFallingStarTrail(level, entity, activeDrop, tick, config);
             }
         }
 
@@ -155,11 +164,7 @@ public final class StarEventService {
             return false;
         }
 
-        if (config.activation.requireSurfaceAccess && !level.canSeeSky(player.blockPosition())) {
-            return false;
-        }
-
-        return true;
+        return !config.activation.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
     private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig config) {
@@ -193,7 +198,13 @@ public final class StarEventService {
             itemEntity.setPickUpDelay(Math.max(0, config.claim.pickupDelayTicks));
             level.addFreshEntity(itemEntity);
             int lifeTicks = Math.max(1, config.claim.lifeTicks);
-            activeDrops.put(itemEntity.getUUID(), new ActiveStarDrop(level.dimension(), level.getServer().getTickCount() + lifeTicks));
+            long startTick = level.getServer().getTickCount();
+            activeDrops.put(
+                    itemEntity.getUUID(),
+                    new ActiveStarDrop(level.dimension(), startTick, startTick + lifeTicks)
+            );
+            emitImpactBurst(level, spawnPos, config);
+            emitImpactSound(level, spawnPos, config);
             announceSpawn(player, config);
             return true;
         }
@@ -215,7 +226,6 @@ public final class StarEventService {
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 
         BlockPos spawnPos = new BlockPos(x, y, z);
-        BlockPos groundPos = spawnPos.below();
 
         if (!level.getWorldBorder().isWithinBounds(spawnPos)) {
             return null;
@@ -230,10 +240,6 @@ public final class StarEventService {
         }
 
         if (!level.getBlockState(spawnPos).canBeReplaced()) {
-            return null;
-        }
-
-        if (!level.getBlockState(groundPos).blocksMotion()) {
             return null;
         }
 
@@ -305,7 +311,128 @@ public final class StarEventService {
         return null;
     }
 
-    private record ActiveStarDrop(ResourceKey<Level> dimension, long expireTick) {
+    private void emitFallingStarTrail(ServerLevel level, Entity entity, ActiveStarDrop activeDrop, long tick, MainConfig config) {
+        if (!config.visuals.enabled) {
+            return;
+        }
+
+        int interval = Math.max(1, config.visuals.emissionIntervalTicks);
+        if ((tick % interval) != 0) {
+            return;
+        }
+
+        int fallDistance = Math.max(2, config.visuals.fallDistance);
+        long elapsed = Math.max(0L, tick - activeDrop.startTick());
+        double phase = (elapsed % fallDistance) / (double) fallDistance;
+        double y = entity.getY() + 0.5D + (1.0D - phase) * fallDistance;
+
+        ParticleOptions particle = resolveParticlePreset(config.visuals.particlePreset);
+        int particleCount = Math.max(1, config.visuals.particlesPerEmission);
+        level.sendParticles(particle, entity.getX(), y, entity.getZ(), particleCount, 0.2D, 0.05D, 0.2D, 0.0D);
+        emitTravelSound(level, entity.getX(), y, entity.getZ(), tick, config);
+    }
+
+    private void emitImpactBurst(ServerLevel level, BlockPos spawnPos, MainConfig config) {
+        if (!config.visuals.enabled || !config.visuals.impactBurstEnabled) {
+            return;
+        }
+
+        ParticleOptions particle = resolveParticlePreset(config.visuals.impactParticlePreset);
+        int count = Math.max(1, config.visuals.impactParticleCount);
+        double spread = Math.max(0.0D, config.visuals.impactSpread);
+
+        level.sendParticles(
+                particle,
+                spawnPos.getX() + 0.5D,
+                spawnPos.getY() + 0.2D,
+                spawnPos.getZ() + 0.5D,
+                count,
+                spread,
+                spread * 0.4D,
+                spread,
+                0.01D
+        );
+    }
+
+    private void emitImpactSound(ServerLevel level, BlockPos spawnPos, MainConfig config) {
+        if (!config.visuals.enabled || !config.visuals.impactSoundEnabled) {
+            return;
+        }
+
+        SoundEvent soundEvent = resolveSoundEvent(config.visuals.impactSoundId);
+        if (soundEvent == null) {
+            return;
+        }
+
+        float volume = Math.max(0.0F, config.visuals.impactSoundVolume);
+        float minPitch = Math.max(0.1F, config.visuals.impactSoundPitchMin);
+        float maxPitch = Math.max(minPitch, config.visuals.impactSoundPitchMax);
+        float pitch = minPitch;
+        if (maxPitch > minPitch) {
+            pitch = minPitch + ThreadLocalRandom.current().nextFloat() * (maxPitch - minPitch);
+        }
+
+        level.playSound(
+                null,
+                spawnPos.getX() + 0.5D,
+                spawnPos.getY() + 0.2D,
+                spawnPos.getZ() + 0.5D,
+                soundEvent,
+                SoundSource.AMBIENT,
+                volume,
+                pitch
+        );
+    }
+
+    private void emitTravelSound(ServerLevel level, double x, double y, double z, long tick, MainConfig config) {
+        if (!config.visuals.enabled || !config.visuals.travelSoundEnabled) {
+            return;
+        }
+
+        int interval = Math.max(1, config.visuals.travelSoundIntervalTicks);
+        if ((tick % interval) != 0) {
+            return;
+        }
+
+        SoundEvent soundEvent = resolveSoundEvent(config.visuals.travelSoundId);
+        if (soundEvent == null) {
+            return;
+        }
+
+        float volume = Math.max(0.0F, config.visuals.travelSoundVolume);
+        float minPitch = Math.max(0.1F, config.visuals.travelSoundPitchMin);
+        float maxPitch = Math.max(minPitch, config.visuals.travelSoundPitchMax);
+        float pitch = minPitch;
+        if (maxPitch > minPitch) {
+            pitch = minPitch + ThreadLocalRandom.current().nextFloat() * (maxPitch - minPitch);
+        }
+
+        level.playSound(null, x, y, z, soundEvent, SoundSource.AMBIENT, volume, pitch);
+    }
+
+    private SoundEvent resolveSoundEvent(String id) {
+        ResourceLocation resourceLocation = ResourceLocation.tryParse(id);
+        if (resourceLocation == null) {
+            return null;
+        }
+
+        return BuiltInRegistries.SOUND_EVENT.getOptional(resourceLocation).orElse(null);
+    }
+
+    private ParticleOptions resolveParticlePreset(String preset) {
+        if (preset == null) {
+            return ParticleTypes.END_ROD;
+        }
+
+        return switch (preset.toLowerCase(Locale.ROOT)) {
+            case "ash" -> ParticleTypes.ASH;
+            case "glow" -> ParticleTypes.GLOW;
+            case "firework" -> ParticleTypes.FIREWORK;
+            default -> ParticleTypes.END_ROD;
+        };
+    }
+
+    private record ActiveStarDrop(ResourceKey<Level> dimension, long startTick, long expireTick) {
     }
 }
 

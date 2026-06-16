@@ -80,10 +80,11 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
             @Override
             public void onServerTick(MinecraftServer server) {
-                starEventService.onServerTick(server);
+                MainConfig config = getMainConfig();
+                starEventService.onServerTick(server, config);
                 var gameTick = server.getTickCount();
-                if (orchestrator.shouldStartCycle(gameTick, getMainConfig())) {
-                    int spawned = starEventService.runCycle(server, getMainConfig());
+                if (orchestrator.shouldStartCycle(gameTick, config)) {
+                    int spawned = starEventService.runCycle(server, config);
                     if (spawned > 0) {
                         createInfoLog("Starting star cycle at tick " + gameTick + " (spawned=" + spawned + ")");
                     }
