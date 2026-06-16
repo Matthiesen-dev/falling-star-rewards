@@ -10,6 +10,17 @@
 - Per-biome or per-dimension reward pools beyond simple allow/deny filters.
 - Complex anti-cheese systems (basic spawn safety checks only in v1).
 
+## Commands
+
+- `/fallingstar help` - Show help message.
+- `/fallingstar reload` - Reload config files.
+- `/fallingstar status` - Show condensed status output.
+- `/fallingstar status breif` - Show condensed status output.
+- `/fallingstar status full` - Show detailed status output.
+- `/fallingstar force` - Force one spawn cycle.
+- `/fallingstar force <count>` - Force up to <count> spawn cycles.
+- `/fallingstar cleanup` - Remove tracked active drops
+
 ## Runtime Flow (Target)
 1. Every server tick, loader callback calls `FallingStarRewards.onServerTick(gameTick)`.
 2. `StarEventOrchestrator` checks if a cycle should run based on scheduler config.
@@ -21,7 +32,7 @@
 ## Planned Common Services
 - `StarEventOrchestrator`
   - Tracks next cycle tick and computes interval with jitter.
-- `SpawnSelector` (planned)
+- `SpawnSelector`
   - Chooses candidate locations with safety and radius constraints.
 - `RewardRoller` 
   - Picks a weighted reward entry and stack size.
