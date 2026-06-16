@@ -13,8 +13,6 @@ A Server-side mod that adds falling stars to the world, which can drop a variety
 
 Documentation for this mod can be found at [mods.matthiesen.dev](https://mods.matthiesen.dev/falling-star-rewards/)
 
-Implementation planning notes are available in [`docs/architecture-plan.md`](docs/architecture-plan.md).
-
 ## Version Compatibility
 
 | Minecraft Version | Mod Version |
