@@ -1,4 +1,4 @@
-# falling-star-rewards
+# Falling Star Rewards
 
 <div>
   <img src="https://mods.matthiesen.dev/badges/matthiesenLibAPI.svg" alt="Matthiesen Lib API">
