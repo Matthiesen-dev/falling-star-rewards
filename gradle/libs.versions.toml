@@ -7,7 +7,8 @@ minecraft = "1.21.1"
 fabric-loader = "0.17.2"
 fabric-api = "0.116.6+1.21.1"
 neoforge = "21.1.182"
-junit = "5.1.0"
+junit = "5.12.2"
+junit-platform = "1.12.2"
 publish = "0.35.0"
 matthiesen_lib = "1.7.1"
 sponge-mixin = "0.8.5"
@@ -30,6 +31,7 @@ fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.r
 neoforge = { group = "net.neoforged", name = "neoforge", version.ref = "neoforge" }
 junit-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
 junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit-platform" }
 matthiesen-lib-api-common = { group = "dev.matthiesen", name = "matthiesen-lib-api-common", version.ref = "matthiesen_lib" }
 matthiesen-lib-api-fabric = { group = "dev.matthiesen", name = "matthiesen-lib-api-fabric", version.ref = "matthiesen_lib" }
 matthiesen-lib-api-neoforge = { group = "dev.matthiesen", name = "matthiesen-lib-api-neoforge", version.ref = "matthiesen_lib" }
