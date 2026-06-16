@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -40,7 +41,7 @@ public final class FallingStarCommand extends AbstractCommand {
     public int reload(CommandContext<CommandSourceStack> context) {
         FallingStarRewards.INSTANCE.reload().run();
         context.getSource().sendSystemMessage(
-                Component.literal("Falling Star Rewards config reloaded!")
+                Component.literal("Falling Star Rewards config reloaded!").withStyle(ChatFormatting.GREEN)
         );
         return 1;
     }
@@ -150,7 +151,7 @@ public final class FallingStarCommand extends AbstractCommand {
         int removed = FallingStarRewards.INSTANCE.cleanupActiveDrops(context.getSource().getServer());
         context.getSource().sendSystemMessage(Component.literal(
                 "Removed tracked star drops: " + removed
-        ));
+        ).withStyle(ChatFormatting.YELLOW));
         return removed;
     }
 
@@ -172,7 +173,7 @@ public final class FallingStarCommand extends AbstractCommand {
 
         context.getSource().sendSystemMessage(Component.literal(
                 "Forced falling star cycle complete (spawned=" + spawned + ")"
-        ));
+        ).withStyle(ChatFormatting.GREEN));
         return spawned;
     }
 }

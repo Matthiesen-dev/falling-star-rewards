@@ -3,6 +3,7 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -281,7 +282,7 @@ public final class StarEventService {
             return;
         }
 
-        Component message = Component.literal(config.announcements.spawnMessage);
+        Component message = Component.literal(config.announcements.spawnMessage).withStyle(ChatFormatting.AQUA);
         if ("global".equalsIgnoreCase(config.announcements.scope)) {
             server.getPlayerList().broadcastSystemMessage(message, false);
             return;

@@ -91,10 +91,6 @@ public final class RewardValidator {
         return invalidEntries;
     }
 
-    public int getTotalEntries() {
-        return validEntries + invalidEntries;
-    }
-
     public List<String> getValidationMessages() {
         return new ArrayList<>(validationMessages);
     }
