@@ -44,7 +44,12 @@ public final class RewardRoller {
                 int min = Math.max(1, candidate.minCount);
                 int max = Math.max(min, candidate.maxCount);
                 int count = min + random.nextInt((max - min) + 1);
-                return Optional.of(new RolledReward(candidate.id, count));
+                return Optional.of(new RolledReward(
+                        candidate.id,
+                        count,
+                        candidate.customModelData,
+                        candidate.customData
+                ));
             }
         }
 

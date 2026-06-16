@@ -183,6 +183,12 @@ public final class MainConfig {
         @SerializedName("maxCount")
         public int maxCount;
 
+        @SerializedName("customModelData")
+        public Integer customModelData;
+
+        @SerializedName("customData")
+        public String customData;
+
         @SuppressWarnings("unused")
         public RewardEntry() {
             this("minecraft:amethyst_shard", 1, 1, 1);
@@ -193,6 +199,8 @@ public final class MainConfig {
             this.weight = weight;
             this.minCount = minCount;
             this.maxCount = maxCount;
+            this.customModelData = null;
+            this.customData = null;
         }
     }
 }

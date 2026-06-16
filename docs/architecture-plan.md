@@ -77,6 +77,8 @@ Current implementation in `MainConfig` introduces these sections:
 - `rewards`
   - `poolMode`: currently `weighted`.
   - `entries`: weighted rewards with count range.
+  - `entries[].customModelData`: optional custom model data value.
+  - `entries[].customData`: optional SNBT payload applied to the `custom_data` item component.
 
 ### Example Config
 ```json
@@ -138,7 +140,9 @@ Current implementation in `MainConfig` introduces these sections:
         "id": "minecraft:amethyst_shard",
         "weight": 20,
         "minCount": 1,
-        "maxCount": 3
+        "maxCount": 3,
+        "customModelData": 12001,
+        "customData": "{star_token:1b}"
       },
       {
         "id": "minecraft:glowstone_dust",

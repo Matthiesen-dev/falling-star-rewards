@@ -1,5 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-public record RolledReward(String itemId, int count) {
+public record RolledReward(String itemId, int count, Integer customModelData, String customData) {
 }
 

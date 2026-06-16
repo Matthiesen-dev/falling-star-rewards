@@ -122,7 +122,9 @@ public final class FallingStarCommand extends AbstractCommand {
                     .addRow("Travel Interval", Integer.toString(config.visuals.travelSoundIntervalTicks))
                     .addSection("Rewards")
                     .addRow("Pool Mode", config.rewards.poolMode)
-                    .addRow("Entries", Integer.toString(config.rewards.entries.length));
+                    .addRow("Total Entries", Integer.toString(config.rewards.entries.length))
+                    .addRow("Valid Entries", Integer.toString(mod.getRewardValidator().getValidEntries()))
+                    .addRow("Invalid Entries", Integer.toString(mod.getRewardValidator().getInvalidEntries()));
         }
 
         return builder.build();

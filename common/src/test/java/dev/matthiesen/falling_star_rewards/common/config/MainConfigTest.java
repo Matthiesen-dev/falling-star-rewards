@@ -37,6 +37,8 @@ class MainConfigTest {
         config.visuals.impactSoundVolume = 0.6F;
         config.visuals.travelSoundEnabled = true;
         config.visuals.travelSoundId = "minecraft:entity.allay.ambient_with_item";
+        config.rewards.entries[0].customModelData = 12001;
+        config.rewards.entries[0].customData = "{star_token:1b}";
 
         String json = MainConfig.GSON.toJson(config);
         MainConfig decoded = MainConfig.GSON.fromJson(json, MainConfig.class);
@@ -51,6 +53,8 @@ class MainConfigTest {
         assertEquals(0.6F, decoded.visuals.impactSoundVolume);
         assertTrue(decoded.visuals.travelSoundEnabled);
         assertEquals("minecraft:entity.allay.ambient_with_item", decoded.visuals.travelSoundId);
+        assertEquals(12001, decoded.rewards.entries[0].customModelData);
+        assertEquals("{star_token:1b}", decoded.rewards.entries[0].customData);
     }
 }
 

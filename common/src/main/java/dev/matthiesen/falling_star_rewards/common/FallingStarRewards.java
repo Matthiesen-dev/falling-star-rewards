@@ -7,6 +7,7 @@ import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.runtime.StarEventOrchestrator;
 import dev.matthiesen.falling_star_rewards.common.runtime.StarEventService;
+import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import dev.matthiesen.libs.faststats.Token;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
             createConfigManager(MainConfig.class, "config");
     private final StarEventOrchestrator orchestrator = new StarEventOrchestrator();
     private final StarEventService starEventService = new StarEventService();
+    private final RewardValidator rewardValidator = new RewardValidator();
 
     public FallingStarRewards() {
         super(MOD_ID, MOD_NAME);
@@ -46,6 +48,16 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return () -> {
             MAIN_CONFIG_MANAGER.loadConfig();
             MainConfig config = getMainConfig();
+            rewardValidator.validateRewards(config);
+            for (String message : rewardValidator.getValidationMessages()) {
+                createWarnLog(message);
+            }
+            if (rewardValidator.getInvalidEntries() > 0) {
+                createWarnLog("Reward validation: " + rewardValidator.getValidEntries() + " valid, "
+                        + rewardValidator.getInvalidEntries() + " invalid");
+            } else if (rewardValidator.getValidEntries() > 0) {
+                createInfoLog("All " + rewardValidator.getValidEntries() + " reward entries validated successfully");
+            }
             createInfoLog("Reloaded Config (enabled=" + config.enabled
                     + ", baseIntervalTicks=" + config.scheduler.baseIntervalTicks + ")");
         };
@@ -69,6 +81,10 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
     public int cleanupActiveDrops(MinecraftServer server) {
         return starEventService.cleanupActiveDrops(server);
+    }
+
+    public RewardValidator getRewardValidator() {
+        return rewardValidator;
     }
 
     public MatthiesenLibServerEventHandler getServerEventHandler() {
@@ -96,5 +112,9 @@ public final class FallingStarRewards extends AbstractCommonMod {
                 createInfoLog("Server Stopped");
             }
         };
+    }
+
+    public void createWarnLog(String message) {
+        getLogger().warn(message);
     }
 }

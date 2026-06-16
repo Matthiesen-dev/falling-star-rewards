@@ -50,5 +50,21 @@ class RewardRollerTest {
 
         assertEquals(1, result.count());
     }
+
+    @Test
+    void customFieldsArePreservedInRolledReward() {
+        MainConfig config = new MainConfig();
+        MainConfig.RewardEntry entry = new MainConfig.RewardEntry("minecraft:paper", 10, 1, 1);
+        entry.customModelData = 12001;
+        entry.customData = "{star_token:1b}";
+        config.rewards.entries = new MainConfig.RewardEntry[] { entry };
+
+        RewardRoller roller = new RewardRoller();
+        RolledReward result = roller.roll(config, new Random(4)).orElseThrow();
+
+        assertEquals("minecraft:paper", result.itemId());
+        assertEquals(12001, result.customModelData());
+        assertEquals("{star_token:1b}", result.customData());
+    }
 }
 
