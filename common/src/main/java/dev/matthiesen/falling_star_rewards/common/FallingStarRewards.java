@@ -56,10 +56,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
     @Override
     public Runnable reload() {
         return () -> {
-            ANNOUNCEMENTS_CONFIG_MANAGER.loadConfig();
-            MAIN_CONFIG_MANAGER.loadConfig();
-            REWARDS_CONFIG_MANAGER.loadConfig();
-            VISUALS_CONFIG_MANAGER.loadConfig();
+            loadConfigs();
             MainConfig config = getMainConfig();
             RewardsConfig rewardsConfig = getRewardsConfig();
             rewardValidator.validateRewards(rewardsConfig);
@@ -75,6 +72,13 @@ public final class FallingStarRewards extends AbstractCommonMod {
             createInfoLog("Reloaded Config (enabled=" + config.enabled
                     + ", baseIntervalTicks=" + config.scheduler.baseIntervalTicks + ")");
         };
+    }
+
+    public void loadConfigs() {
+        ANNOUNCEMENTS_CONFIG_MANAGER.loadConfig();
+        MAIN_CONFIG_MANAGER.loadConfig();
+        REWARDS_CONFIG_MANAGER.loadConfig();
+        VISUALS_CONFIG_MANAGER.loadConfig();
     }
 
     public MainConfig getMainConfig() {
