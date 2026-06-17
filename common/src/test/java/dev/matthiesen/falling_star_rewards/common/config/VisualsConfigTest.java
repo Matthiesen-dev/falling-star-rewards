@@ -13,7 +13,7 @@ class VisualsConfigTest {
         VisualsConfig visuals = new VisualsConfig();
 
         assertTrue(visuals.enabled);
-        assertEquals("ash", visuals.particlePreset);
+        assertEquals("end_rod", visuals.particlePreset);
         assertTrue(visuals.impactBurstEnabled);
         assertEquals("firework", visuals.impactParticlePreset);
         assertTrue(visuals.impactSoundEnabled);
