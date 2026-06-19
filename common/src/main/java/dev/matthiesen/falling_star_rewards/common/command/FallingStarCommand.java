@@ -34,10 +34,10 @@ import java.util.function.Function;
  *     /fallingstar force [preset]
  *     /fallingstar preset [events|visuals] [disable|enable] [name]
  *     /fallingstar preset [events|visuals|rewards] list
+ *     /fallingstar preset [events|visuals|rewards] create [name]
  *
  *     Planned:
  *
- *     /fallingstar preset [events|visuals|rewards] create [name]
  *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar preset [events|visuals|rewards] info [name]
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
@@ -92,7 +92,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("list", list -> list.executes(this::presetEventsList))
                                         .then("create", create -> create
                                                 .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::help))
+                                                        name -> name.executes(this::presetEventCreate))
                                         )
                                         .then("delete", delete -> delete
                                                 .argument("name", StringArgumentType.string(),
@@ -132,7 +132,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("list", list -> list.executes(this::presetRewardsList))
                                         .then("create", create -> create
                                                 .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::help))
+                                                        name -> name.executes(this::presetRewardsCreate))
                                         )
                                         .then("delete", delete -> delete
                                                 .argument("name", StringArgumentType.string(),
@@ -207,7 +207,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("list", list -> list.executes(this::presetVisualsList))
                                         .then("create", create -> create
                                                 .argument("name", StringArgumentType.string(), name ->
-                                                        name.executes(this::help))
+                                                        name.executes(this::presetVisualsCreate))
                                         )
                                         .then("delete", delete -> delete
                                                 .argument("name", StringArgumentType.string(), name ->
@@ -318,6 +318,34 @@ public final class FallingStarCommand extends AbstractCommand {
         var chatMessage = new ChatTableBuilder(tableTitle);
         manager.getConfigs().forEach((name, config) -> chatMessage.addRow(name, statusResolver.apply(config)));
         context.getSource().sendSystemMessage(chatMessage.build());
+        return 1;
+    }
+
+    private int presetEventCreate(CommandContext<CommandSourceStack> context) {
+        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), "event", "Event");
+    }
+
+    private int presetRewardsCreate(CommandContext<CommandSourceStack> context) {
+        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(), "reward", "Reward");
+    }
+
+    private int presetVisualsCreate(CommandContext<CommandSourceStack> context) {
+        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), "visuals", "Visuals");
+    }
+
+    private <T> int presetCreate(
+            CommandContext<CommandSourceStack> context,
+            ConfigFolderManager<T> manager,
+            String presetType,
+            String presetTitle
+    ) {
+        String name = StringArgumentType.getString(context, "name");
+        if (manager.getConfigs().containsKey(name)) {
+            context.getSource().sendFailure(Component.literal("A " + presetType + " preset with that name already exists.").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        manager.loadConfig(name);
+        context.getSource().sendSystemMessage(Component.literal(presetTitle + " preset '" + name + "' created successfully.").withStyle(ChatFormatting.GREEN));
         return 1;
     }
 
