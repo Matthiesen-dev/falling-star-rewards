@@ -17,6 +17,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
+import java.util.function.Function;
+
 /**
  * Falling Star Commands
  *<pre>
@@ -30,11 +32,11 @@ import net.minecraft.network.chat.Component;
  *     /fallingstar status full
  *     /fallingstar force
  *     /fallingstar force [preset]
+ *     /fallingstar preset [events|visuals] [disable|enable] [name]
+ *     /fallingstar preset [events|visuals|rewards] list
  *
  *     Planned:
  *
- *     /fallingstar preset [events|visuals] [disable|enable] [name]
- *     /fallingstar preset [events|visuals|rewards] list
  *     /fallingstar preset [events|visuals|rewards] create [name]
  *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar preset [events|visuals|rewards] info [name]
@@ -87,7 +89,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                 })
                                                                 .executes(this::presetEventDisable))
                                         )
-                                        .then("list", list -> list.executes(this::help))
+                                        .then("list", list -> list.executes(this::presetEventsList))
                                         .then("create", create -> create
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name.executes(this::help))
@@ -127,7 +129,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                 )
 
                                 .then("rewards", rewards -> rewards
-                                        .then("list", list -> list.executes(this::help))
+                                        .then("list", list -> list.executes(this::presetRewardsList))
                                         .then("create", create -> create
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name.executes(this::help))
@@ -202,7 +204,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                     return builder.buildFuture();
                                                                 })
                                                                 .executes(this::presetVisualsDisable)))
-                                        .then("list", list -> list.executes(this::help))
+                                        .then("list", list -> list.executes(this::presetVisualsList))
                                         .then("create", create -> create
                                                 .argument("name", StringArgumentType.string(), name ->
                                                         name.executes(this::help))
@@ -255,18 +257,67 @@ public final class FallingStarCommand extends AbstractCommand {
         return 1;
     }
 
-    public int presetEventDisable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), false);
-        return 1;
-    }
-
     public int presetVisualsEnable(CommandContext<CommandSourceStack> context) {
         presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), true);
         return 1;
     }
 
+    public int presetEventDisable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), false);
+        return 1;
+    }
+
     public int presetVisualsDisable(CommandContext<CommandSourceStack> context) {
         presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), false);
+        return 1;
+    }
+
+    public int presetEventsList(CommandContext<CommandSourceStack> context) {
+        return presetList(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(),
+                "No event presets found.",
+                "Event Presets",
+                config -> config.enabled ? "Enabled" : "Disabled"
+        );
+    }
+
+    public int presetRewardsList(CommandContext<CommandSourceStack> context) {
+        return presetList(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(),
+                "No reward presets found.",
+                "Reward Presets",
+                config -> "Enabled"
+        );
+    }
+
+    public int presetVisualsList(CommandContext<CommandSourceStack> context) {
+        return presetList(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(),
+                "No visuals presets found.",
+                "Visual Presets",
+                config -> config.enabled ? "Enabled" : "Disabled"
+        );
+    }
+
+    @SuppressWarnings("SameReturnValue")
+    private <T> int presetList(
+            CommandContext<CommandSourceStack> context,
+            ConfigFolderManager<T> manager,
+            String emptyMessage,
+            String tableTitle,
+            Function<T, String> statusResolver
+    ) {
+        if (manager.getConfigs().isEmpty()) {
+            context.getSource().sendSystemMessage(Component.literal(emptyMessage).withStyle(ChatFormatting.YELLOW));
+            return 1;
+        }
+
+        var chatMessage = new ChatTableBuilder(tableTitle);
+        manager.getConfigs().forEach((name, config) -> chatMessage.addRow(name, statusResolver.apply(config)));
+        context.getSource().sendSystemMessage(chatMessage.build());
         return 1;
     }
 
