@@ -13,6 +13,31 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
+/**
+ * Falling Star Commands
+ *<pre>
+ *     Current:
+ *
+ *     /fallingstar help
+ *     /fallingstar reload
+ *     /fallingstar cleanup
+ *     /fallingstar status
+ *     /fallingstar status brief
+ *     /fallingstar status full
+ *     /fallingstar force
+ *     /fallingstar force [preset]
+ *
+ *     Planned:
+ *
+ *     /fallingstar preset event set [name] [reward|visuals] [preset name]
+ *     /fallingstar preset [event|visuals] [disable|enable] [name]
+ *     /fallingstar preset [event|visuals|rewards] list
+ *     /fallingstar preset [event|visuals|rewards] create [name]
+ *     /fallingstar preset [event|visuals|rewards] info [name]
+ *     /fallingstar preset reward [name] add [item_id] [weight] [min] [max] (customModelData) (customData)
+ *     /fallingstar preset reward [name] remove [item_id]
+ *</pre>
+ */
 public final class FallingStarCommand extends AbstractCommand {
     public static final FallingStarCommand CMD = new FallingStarCommand();
 

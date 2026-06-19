@@ -37,12 +37,16 @@ public final class RewardsPresetConfig {
         }
 
         public RewardEntry(String id, int weight, int minCount, int maxCount) {
+            this(id, weight, minCount, maxCount, null, null);
+        }
+
+        public RewardEntry(String id, int weight, int minCount, int maxCount, Integer customModelData, String customData) {
             this.id = id;
             this.weight = weight;
             this.minCount = minCount;
             this.maxCount = maxCount;
-            this.customModelData = null;
-            this.customData = null;
+            this.customModelData = customModelData;
+            this.customData = customData;
         }
     }
 
