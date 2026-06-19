@@ -11,6 +11,9 @@ public final class AnnouncementsConfig {
     @SerializedName("scope")
     public String scope = "nearby";
 
+    @SerializedName("useActionBar")
+    public boolean useActionBar = false;
+
     @SerializedName("spawnMessage")
     public String spawnMessage = "A falling star has appeared nearby!";
 

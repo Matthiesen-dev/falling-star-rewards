@@ -110,6 +110,7 @@ public final class FallingStarCommand extends AbstractCommand {
                     .addSection("Announcements")
                     .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))
                     .addRow("Scope", announcementsConfig.scope)
+                    .addRow("Use Action Bar Overlay", Boolean.toString(announcementsConfig.useActionBar))
                     .addRow("Message", announcementsConfig.spawnMessage)
                     .addSection("Visual FX")
                     .addRow("Trail Enabled", Boolean.toString(visualsConfig.enabled))

@@ -280,6 +280,8 @@ public final class StarEventService {
             return;
         }
 
+        var useActionBarOverlay = announcementsConfig.useActionBar;
+
         MinecraftServer server = sourcePlayer.getServer();
         if (server == null) {
             return;
@@ -287,7 +289,7 @@ public final class StarEventService {
 
         Component message = Component.literal(announcementsConfig.spawnMessage).withStyle(ChatFormatting.AQUA);
         if ("global".equalsIgnoreCase(announcementsConfig.scope)) {
-            server.getPlayerList().broadcastSystemMessage(message, false);
+            server.getPlayerList().broadcastSystemMessage(message, useActionBarOverlay);
             return;
         }
 
@@ -295,7 +297,7 @@ public final class StarEventService {
         double maxDistanceSq = maxDistance * maxDistance;
         for (ServerPlayer viewer : sourcePlayer.serverLevel().players()) {
             if (viewer.distanceToSqr(sourcePlayer) <= maxDistanceSq) {
-                viewer.sendSystemMessage(message);
+                viewer.sendSystemMessage(message, useActionBarOverlay);
             }
         }
     }
