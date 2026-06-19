@@ -38,13 +38,13 @@ import java.util.function.Function;
  *
  *     Planned:
  *
- *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar preset [events|visuals|rewards] info [name]
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
  *
+ *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar confirm-delete [event_id]
  *</pre>
  */
