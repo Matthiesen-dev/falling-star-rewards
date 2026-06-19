@@ -10,7 +10,7 @@ neoforge = "21.1.182"
 junit = "5.12.2"
 junit-platform = "1.12.2"
 publish = "0.35.0"
-matthiesen_lib = "1.7.1"
+matthiesen_lib = "1.8.0"
 sponge-mixin = "0.8.5"
 
 [plugins]
