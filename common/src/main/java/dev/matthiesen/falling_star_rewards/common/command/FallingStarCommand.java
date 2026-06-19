@@ -1,8 +1,8 @@
 package dev.matthiesen.falling_star_rewards.common.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
 import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
@@ -30,9 +30,12 @@ public final class FallingStarCommand extends AbstractCommand {
                         )
                         .then("force", force -> force
                                 .executes(this::forceOnce)
-                                .argument("count", IntegerArgumentType.integer(1, 16),
-                                        count -> count.executes(this::forceCount)
-                                )
+                                .argument("preset", StringArgumentType.string(),
+                                        preset -> preset.suggests((ctx, builder) -> {
+                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                    return builder.buildFuture();
+                                                })
+                                                .executes(this::forcePreset))
                         )
                         .build()
         );
@@ -111,7 +114,7 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("/fallingstar status full", "Show detailed status output")
                 .addSection("Actions")
                 .addRow("/fallingstar force", "Force one spawn cycle")
-                .addRow("/fallingstar force <count>", "Force up to <count> spawns")
+                .addRow("/fallingstar force <preset>", "Force a spawn cycle with the specified preset")
                 .addRow("/fallingstar cleanup", "Remove tracked active drops")
                 .build();
     }
@@ -125,23 +128,23 @@ public final class FallingStarCommand extends AbstractCommand {
     }
 
     public int forceOnce(CommandContext<CommandSourceStack> context) {
-        return executeForce(context, 1);
+        return executeForce(context, null);
     }
 
-    public int forceCount(CommandContext<CommandSourceStack> context) {
-        int count = IntegerArgumentType.getInteger(context, "count");
-        return executeForce(context, count);
+    public int forcePreset(CommandContext<CommandSourceStack> context) {
+        String preset = StringArgumentType.getString(context, "preset");
+        return executeForce(context, preset);
     }
 
-    private int executeForce(CommandContext<CommandSourceStack> context, int count) {
+    private int executeForce(CommandContext<CommandSourceStack> context, String presetId) {
         int spawned = FallingStarRewards.INSTANCE.forceCycle(
                 context.getSource().getServer(),
-                count,
+                presetId,
                 true
         );
 
         context.getSource().sendSystemMessage(Component.literal(
-                "Forced falling star cycle complete (spawned=" + spawned + ")"
+                "Forced falling star cycle complete"
         ).withStyle(ChatFormatting.GREEN));
         return spawned;
     }

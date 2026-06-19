@@ -78,13 +78,13 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return orchestrator.getNextCycleTick();
     }
 
-    public int forceCycle(MinecraftServer server, int maxStars, boolean bypassActivationChecks) {
-        var preset = CONFIG_MANAGER.loadRandomEventPreset();
+    public int forceCycle(MinecraftServer server, String presetId, boolean bypassActivationChecks) {
+        var preset = presetId != null ? CONFIG_MANAGER.loadPresetConfig(presetId) : CONFIG_MANAGER.loadRandomEventPreset();
         if (preset == null) {
             createWarnLog("No event presets available to start a cycle");
             return 0;
         }
-        return starEventService.runCycle(server, preset, getAnnouncementsConfig(), maxStars, bypassActivationChecks);
+        return starEventService.runCycle(server, preset, getAnnouncementsConfig(), bypassActivationChecks);
     }
 
     public int getActiveDropCount() {

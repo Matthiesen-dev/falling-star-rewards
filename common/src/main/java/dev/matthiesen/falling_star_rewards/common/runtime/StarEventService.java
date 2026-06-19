@@ -78,11 +78,6 @@ public final class StarEventService {
         }
     }
 
-    public int runCycle(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
-        int maxStars = Math.max(1, presetConfig.eventConfig.scheduler.maxStarsPerCycle);
-        return runCycle(server, presetConfig, announcementsConfig, maxStars, false);
-    }
-
     public int getActiveDropCount() {
         return activeDrops.size();
     }
@@ -111,8 +106,12 @@ public final class StarEventService {
         return removed;
     }
 
-    public int runCycle(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig, int maxStars, boolean bypassActivationChecks) {
-        int cappedMaxStars = Math.max(1, maxStars);
+    public int runCycle(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
+        return runCycle(server, presetConfig, announcementsConfig, false);
+    }
+
+    public int runCycle(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
+        int cappedMaxStars = Math.max(1, presetConfig.eventConfig.scheduler.maxStarsPerCycle);
         int maxActiveDrops = Math.max(1, presetConfig.eventConfig.claim.maxActiveDrops);
         if (activeDrops.size() >= maxActiveDrops) {
             return 0;
