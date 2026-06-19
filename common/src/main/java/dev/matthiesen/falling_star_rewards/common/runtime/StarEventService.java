@@ -1,11 +1,11 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
-import dev.matthiesen.falling_star_rewards.common.config.RewardsConfig;
-import dev.matthiesen.falling_star_rewards.common.config.VisualsConfig;
+import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -46,7 +46,7 @@ public final class StarEventService {
     private final RewardRoller rewardRoller = new RewardRoller();
     private final Map<UUID, ActiveStarDrop> activeDrops = new HashMap<>();
 
-    public void onServerTick(MinecraftServer server, VisualsConfig visualsConfig) {
+    public void onServerTick(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig config) {
         if (activeDrops.isEmpty()) {
             return;
         }
@@ -70,18 +70,13 @@ public final class StarEventService {
             }
 
             if (entity.level() instanceof ServerLevel level) {
-                emitFallingStarTrail(level, entity, activeDrop, tick, visualsConfig);
+                emitFallingStarTrail(level, entity, activeDrop, tick, config.visualsConfig);
             }
         }
 
         for (UUID entityId : toRemove) {
             activeDrops.remove(entityId);
         }
-    }
-
-    public int runCycle(MinecraftServer server, MainConfig config, RewardsConfig rewardsConfig, VisualsConfig visualsConfig, AnnouncementsConfig announcementsConfig) {
-        int maxStars = Math.max(1, config.scheduler.maxStarsPerCycle);
-        return runCycle(server, config, rewardsConfig, visualsConfig, announcementsConfig, maxStars, false);
     }
 
     public int getActiveDropCount() {
@@ -112,14 +107,18 @@ public final class StarEventService {
         return removed;
     }
 
-    public int runCycle(MinecraftServer server, MainConfig config, RewardsConfig rewardsConfig, VisualsConfig visualsConfig, AnnouncementsConfig announcementsConfig, int maxStars, boolean bypassActivationChecks) {
-        int cappedMaxStars = Math.max(1, maxStars);
-        int maxActiveDrops = Math.max(1, config.claim.maxActiveDrops);
+    public int runCycle(MinecraftServer server, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
+        return runCycle(server, mainConfig, presetConfig, announcementsConfig, false);
+    }
+
+    public int runCycle(MinecraftServer server, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
+        int cappedMaxStars = Math.max(1, mainConfig.scheduler.maxStarsPerCycle);
+        int maxActiveDrops = Math.max(1, mainConfig.claim.maxActiveDrops);
         if (activeDrops.size() >= maxActiveDrops) {
             return 0;
         }
 
-        List<ServerPlayer> eligiblePlayers = collectEligiblePlayers(server, config, bypassActivationChecks);
+        List<ServerPlayer> eligiblePlayers = collectEligiblePlayers(server, presetConfig, bypassActivationChecks);
         if (eligiblePlayers.isEmpty()) {
             return 0;
         }
@@ -137,11 +136,11 @@ public final class StarEventService {
                 break;
             }
 
-            if (spawnStarNearPlayer(player, config, rewardsConfig, visualsConfig, announcementsConfig)) {
+            if (spawnStarNearPlayer(player, mainConfig, presetConfig, announcementsConfig)) {
                 spawned++;
             }
 
-            if (isGlobalScope(config)) {
+            if (isGlobalScope(presetConfig)) {
                 break;
             }
         }
@@ -149,10 +148,10 @@ public final class StarEventService {
         return spawned;
     }
 
-    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, MainConfig config, boolean bypassActivationChecks) {
+    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, boolean bypassActivationChecks) {
         List<ServerPlayer> eligible = new ArrayList<>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (isPlayerEligible(player, config, bypassActivationChecks)) {
+            if (isPlayerEligible(player, presetConfig, bypassActivationChecks)) {
                 eligible.add(player);
             }
         }
@@ -160,35 +159,35 @@ public final class StarEventService {
         return eligible;
     }
 
-    private boolean isPlayerEligible(ServerPlayer player, MainConfig config, boolean bypassActivationChecks) {
+    private boolean isPlayerEligible(ServerPlayer player, FallingStarsConfigManager.LoadedPresetConfig presetConfig, boolean bypassActivationChecks) {
         ServerLevel level = player.serverLevel();
 
         if (bypassActivationChecks) {
             return true;
         }
 
-        if (config.activation.requireNight && !level.isNight()) {
+        if (presetConfig.eventConfig.activation.requireNight && !level.isNight()) {
             return false;
         }
 
-        if (!isWeatherEligible(level, config.activation.weatherMode)) {
+        if (!isWeatherEligible(level, presetConfig.eventConfig.activation.weatherMode)) {
             return false;
         }
 
-        return !config.activation.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
+        return !presetConfig.eventConfig.activation.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
-    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig config, RewardsConfig rewardsConfig, VisualsConfig visualsConfig, AnnouncementsConfig announcementsConfig) {
+    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
         ServerLevel level = player.serverLevel();
-        int maxAttempts = Math.max(1, config.spawn.maxLocationAttempts);
+        int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn.maxLocationAttempts);
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            BlockPos spawnPos = pickSpawnPosition(player, config);
+            BlockPos spawnPos = pickSpawnPosition(player, presetConfig);
             if (spawnPos == null) {
                 continue;
             }
 
-            RolledReward rolledReward = rewardRoller.roll(rewardsConfig).orElse(null);
+            RolledReward rolledReward = rewardRoller.roll(presetConfig.rewardsConfig).orElse(null);
             if (rolledReward == null) {
                 return false;
             }
@@ -209,28 +208,28 @@ public final class StarEventService {
                     spawnPos.getZ() + 0.5,
                     stack
             );
-            itemEntity.setPickUpDelay(Math.max(0, config.claim.pickupDelayTicks));
+            itemEntity.setPickUpDelay(Math.max(0, mainConfig.claim.pickupDelayTicks));
             level.addFreshEntity(itemEntity);
-            int lifeTicks = Math.max(1, config.claim.lifeTicks);
+            int lifeTicks = Math.max(1, mainConfig.claim.lifeTicks);
             long startTick = level.getServer().getTickCount();
             activeDrops.put(
                     itemEntity.getUUID(),
                     new ActiveStarDrop(level.dimension(), startTick, startTick + lifeTicks)
             );
-            emitImpactBurst(level, spawnPos, visualsConfig);
-            emitImpactSound(level, spawnPos, visualsConfig);
-            announceSpawn(player, config, announcementsConfig);
+            emitImpactBurst(level, spawnPos, presetConfig.visualsConfig);
+            emitImpactSound(level, spawnPos, presetConfig.visualsConfig);
+            announceSpawn(player, presetConfig, announcementsConfig);
             return true;
         }
 
         return false;
     }
 
-    private BlockPos pickSpawnPosition(ServerPlayer player, MainConfig config) {
+    private BlockPos pickSpawnPosition(ServerPlayer player, FallingStarsConfigManager.LoadedPresetConfig config) {
         ServerLevel level = player.serverLevel();
 
-        int minRadius = Math.max(0, config.spawn.minRadius);
-        int maxRadius = Math.max(minRadius, config.spawn.maxRadius);
+        int minRadius = Math.max(0, config.eventConfig.spawn.minRadius);
+        int maxRadius = Math.max(minRadius, config.eventConfig.spawn.maxRadius);
 
         double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
         double radius = minRadius + ThreadLocalRandom.current().nextDouble((maxRadius - minRadius) + 1.0D);
@@ -249,7 +248,7 @@ public final class StarEventService {
             return null;
         }
 
-        if (!config.spawn.allowWaterSpawns && !level.getFluidState(spawnPos).isEmpty()) {
+        if (!config.eventConfig.spawn.allowWaterSpawns && !level.getFluidState(spawnPos).isEmpty()) {
             return null;
         }
 
@@ -270,15 +269,17 @@ public final class StarEventService {
         };
     }
 
-    private boolean isGlobalScope(MainConfig config) {
-        return "global".equalsIgnoreCase(config.spawn.targetScope);
+    private boolean isGlobalScope(FallingStarsConfigManager.LoadedPresetConfig config) {
+        return "global".equalsIgnoreCase(config.eventConfig.spawn.targetScope);
     }
 
-    private void announceSpawn(ServerPlayer sourcePlayer, MainConfig config, AnnouncementsConfig announcementsConfig) {
+    private void announceSpawn(ServerPlayer sourcePlayer, FallingStarsConfigManager.LoadedPresetConfig config, AnnouncementsConfig announcementsConfig) {
         if (!announcementsConfig.enabled || announcementsConfig.spawnMessage == null
                 || announcementsConfig.spawnMessage.isBlank()) {
             return;
         }
+
+        var useActionBarOverlay = announcementsConfig.useActionBar;
 
         MinecraftServer server = sourcePlayer.getServer();
         if (server == null) {
@@ -287,15 +288,15 @@ public final class StarEventService {
 
         Component message = Component.literal(announcementsConfig.spawnMessage).withStyle(ChatFormatting.AQUA);
         if ("global".equalsIgnoreCase(announcementsConfig.scope)) {
-            server.getPlayerList().broadcastSystemMessage(message, false);
+            server.getPlayerList().broadcastSystemMessage(message, useActionBarOverlay);
             return;
         }
 
-        double maxDistance = Math.max(16, config.spawn.maxRadius + ANNOUNCE_NEARBY_BUFFER);
+        double maxDistance = Math.max(16, config.eventConfig.spawn.maxRadius + ANNOUNCE_NEARBY_BUFFER);
         double maxDistanceSq = maxDistance * maxDistance;
         for (ServerPlayer viewer : sourcePlayer.serverLevel().players()) {
             if (viewer.distanceToSqr(sourcePlayer) <= maxDistanceSq) {
-                viewer.sendSystemMessage(message);
+                viewer.sendSystemMessage(message, useActionBarOverlay);
             }
         }
     }
@@ -349,35 +350,35 @@ public final class StarEventService {
         return null;
     }
 
-    private void emitFallingStarTrail(ServerLevel level, Entity entity, ActiveStarDrop activeDrop, long tick, VisualsConfig visualsConfig) {
-        if (!visualsConfig.enabled) {
+    private void emitFallingStarTrail(ServerLevel level, Entity entity, ActiveStarDrop activeDrop, long tick, VisualsPresetConfig visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled) {
             return;
         }
 
-        int interval = Math.max(1, visualsConfig.emissionIntervalTicks);
+        int interval = Math.max(1, visualsPresetConfig.emissionIntervalTicks);
         if ((tick % interval) != 0) {
             return;
         }
 
-        int fallDistance = Math.max(2, visualsConfig.fallDistance);
+        int fallDistance = Math.max(2, visualsPresetConfig.fallDistance);
         long elapsed = Math.max(0L, tick - activeDrop.startTick());
         double phase = (elapsed % fallDistance) / (double) fallDistance;
         double y = entity.getY() + 0.5D + (1.0D - phase) * fallDistance;
 
-        ParticleOptions particle = resolveParticlePreset(visualsConfig.particlePreset);
-        int particleCount = Math.max(1, visualsConfig.particlesPerEmission);
+        ParticleOptions particle = resolveParticlePreset(visualsPresetConfig.particlePreset);
+        int particleCount = Math.max(1, visualsPresetConfig.particlesPerEmission);
         level.sendParticles(particle, entity.getX(), y, entity.getZ(), particleCount, 0.2D, 0.05D, 0.2D, 0.0D);
-        emitTravelSound(level, entity.getX(), y, entity.getZ(), tick, visualsConfig);
+        emitTravelSound(level, entity.getX(), y, entity.getZ(), tick, visualsPresetConfig);
     }
 
-    private void emitImpactBurst(ServerLevel level, BlockPos spawnPos, VisualsConfig visualsConfig) {
-        if (!visualsConfig.enabled || !visualsConfig.impactBurstEnabled) {
+    private void emitImpactBurst(ServerLevel level, BlockPos spawnPos, VisualsPresetConfig visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled || !visualsPresetConfig.impact.burstEnabled) {
             return;
         }
 
-        ParticleOptions particle = resolveParticlePreset(visualsConfig.impactParticlePreset);
-        int count = Math.max(1, visualsConfig.impactParticleCount);
-        double spread = Math.max(0.0D, visualsConfig.impactSpread);
+        ParticleOptions particle = resolveParticlePreset(visualsPresetConfig.impact.particlePreset);
+        int count = Math.max(1, visualsPresetConfig.impact.particleCount);
+        double spread = Math.max(0.0D, visualsPresetConfig.impact.spread);
 
         level.sendParticles(
                 particle,
@@ -392,19 +393,19 @@ public final class StarEventService {
         );
     }
 
-    private void emitImpactSound(ServerLevel level, BlockPos spawnPos, VisualsConfig visualsConfig) {
-        if (!visualsConfig.enabled || !visualsConfig.impactSoundEnabled) {
+    private void emitImpactSound(ServerLevel level, BlockPos spawnPos, VisualsPresetConfig visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled || !visualsPresetConfig.impact.soundEnabled) {
             return;
         }
 
-        SoundEvent soundEvent = resolveSoundEvent(visualsConfig.impactSoundId);
+        SoundEvent soundEvent = resolveSoundEvent(visualsPresetConfig.impact.soundId);
         if (soundEvent == null) {
             return;
         }
 
-        float volume = Math.max(0.0F, visualsConfig.impactSoundVolume);
-        float minPitch = Math.max(0.1F, visualsConfig.impactSoundPitchMin);
-        float maxPitch = Math.max(minPitch, visualsConfig.impactSoundPitchMax);
+        float volume = Math.max(0.0F, visualsPresetConfig.impact.soundVolume);
+        float minPitch = Math.max(0.1F, visualsPresetConfig.impact.soundPitchMin);
+        float maxPitch = Math.max(minPitch, visualsPresetConfig.impact.soundPitchMax);
         float pitch = minPitch;
         if (maxPitch > minPitch) {
             pitch = minPitch + ThreadLocalRandom.current().nextFloat() * (maxPitch - minPitch);
@@ -422,24 +423,24 @@ public final class StarEventService {
         );
     }
 
-    private void emitTravelSound(ServerLevel level, double x, double y, double z, long tick, VisualsConfig config) {
-        if (!config.enabled || !config.travelSoundEnabled) {
+    private void emitTravelSound(ServerLevel level, double x, double y, double z, long tick, VisualsPresetConfig config) {
+        if (!config.enabled || !config.travelSound.enabled) {
             return;
         }
 
-        int interval = Math.max(1, config.travelSoundIntervalTicks);
+        int interval = Math.max(1, config.travelSound.intervalTicks);
         if ((tick % interval) != 0) {
             return;
         }
 
-        SoundEvent soundEvent = resolveSoundEvent(config.travelSoundId);
+        SoundEvent soundEvent = resolveSoundEvent(config.travelSound.id);
         if (soundEvent == null) {
             return;
         }
 
-        float volume = Math.max(0.0F, config.travelSoundVolume);
-        float minPitch = Math.max(0.1F, config.travelSoundPitchMin);
-        float maxPitch = Math.max(minPitch, config.travelSoundPitchMax);
+        float volume = Math.max(0.0F, config.travelSound.volume);
+        float minPitch = Math.max(0.1F, config.travelSound.pitchMin);
+        float maxPitch = Math.max(minPitch, config.travelSound.pitchMax);
         float pitch = minPitch;
         if (maxPitch > minPitch) {
             pitch = minPitch + ThreadLocalRandom.current().nextFloat() * (maxPitch - minPitch);

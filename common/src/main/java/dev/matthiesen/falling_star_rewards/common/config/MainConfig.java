@@ -8,56 +8,14 @@ public final class MainConfig {
     @SerializedName("enabled")
     public boolean enabled = true;
 
-    @SerializedName("scheduler")
-    public Scheduler scheduler = new Scheduler();
-
-    @SerializedName("activation")
-    public Activation activation = new Activation();
-
-    @SerializedName("spawn")
-    public Spawn spawn = new Spawn();
+    @SerializedName("enablePresetGeneration")
+    public boolean enablePresetGeneration = true;
 
     @SerializedName("claim")
     public Claim claim = new Claim();
 
-    public static final class Scheduler {
-        @SerializedName("baseIntervalTicks")
-        public int baseIntervalTicks = 20 * 120;
-
-        @SerializedName("intervalJitterTicks")
-        public int intervalJitterTicks = 20 * 30;
-
-        @SerializedName("maxStarsPerCycle")
-        public int maxStarsPerCycle = 1;
-    }
-
-    public static final class Activation {
-        @SerializedName("requireNight")
-        public boolean requireNight = true;
-
-        @SerializedName("requireSurfaceAccess")
-        public boolean requireSurfaceAccess = true;
-
-        @SerializedName("weatherMode")
-        public String weatherMode = "any";
-    }
-
-    public static final class Spawn {
-        @SerializedName("targetScope")
-        public String targetScope = "per_player";
-
-        @SerializedName("minRadius")
-        public int minRadius = 16;
-
-        @SerializedName("maxRadius")
-        public int maxRadius = 48;
-
-        @SerializedName("maxLocationAttempts")
-        public int maxLocationAttempts = 12;
-
-        @SerializedName("allowWaterSpawns")
-        public boolean allowWaterSpawns = false;
-    }
+    @SerializedName("scheduler")
+    public Scheduler scheduler = new Scheduler();
 
     public static final class Claim {
         @SerializedName("lifeTicks")
@@ -68,6 +26,17 @@ public final class MainConfig {
 
         @SerializedName("maxActiveDrops")
         public int maxActiveDrops = 64;
+    }
+
+    public static final class Scheduler {
+        @SerializedName("baseIntervalTicks")
+        public int baseIntervalTicks = 20 * 120;
+
+        @SerializedName("intervalJitterTicks")
+        public int intervalJitterTicks = 20 * 30;
+
+        @SerializedName("maxStarsPerCycle")
+        public int maxStarsPerCycle = 1;
     }
 
     @SuppressWarnings("unused")

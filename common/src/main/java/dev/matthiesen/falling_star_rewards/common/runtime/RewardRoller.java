@@ -1,6 +1,6 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import dev.matthiesen.falling_star_rewards.common.config.RewardsConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,15 +10,15 @@ import java.util.random.RandomGenerator;
 
 public final class RewardRoller {
 
-    public Optional<RolledReward> roll(RewardsConfig config) {
+    public Optional<RolledReward> roll(RewardsPresetConfig config) {
         return roll(config, ThreadLocalRandom.current());
     }
 
-    public Optional<RolledReward> roll(RewardsConfig config, RandomGenerator random) {
-        List<RewardsConfig.RewardEntry> candidates = new ArrayList<>();
+    public Optional<RolledReward> roll(RewardsPresetConfig config, RandomGenerator random) {
+        List<RewardsPresetConfig.RewardEntry> candidates = new ArrayList<>();
         int totalWeight = 0;
 
-        for (RewardsConfig.RewardEntry entry : config.entries) {
+        for (RewardsPresetConfig.RewardEntry entry : config.entries) {
             if (entry == null || entry.id == null || entry.id.isBlank()) {
                 continue;
             }
@@ -38,7 +38,7 @@ public final class RewardRoller {
 
         int rolledWeight = random.nextInt(totalWeight);
         int cursor = 0;
-        for (RewardsConfig.RewardEntry candidate : candidates) {
+        for (RewardsPresetConfig.RewardEntry candidate : candidates) {
             cursor += Math.max(0, candidate.weight);
             if (rolledWeight < cursor) {
                 int min = Math.max(1, candidate.minCount);

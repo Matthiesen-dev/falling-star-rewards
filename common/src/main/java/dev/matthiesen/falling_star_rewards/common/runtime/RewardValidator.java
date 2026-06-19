@@ -1,7 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.matthiesen.falling_star_rewards.common.config.RewardsConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
@@ -16,7 +16,7 @@ public final class RewardValidator {
     private int invalidEntries = 0;
     private final List<String> validationMessages = new ArrayList<>();
 
-    public void validateRewards(RewardsConfig config) {
+    public void validateRewards(RewardsPresetConfig config) {
         validEntries = 0;
         invalidEntries = 0;
         validationMessages.clear();
@@ -27,7 +27,7 @@ public final class RewardValidator {
         }
 
         for (int i = 0; i < config.entries.length; i++) {
-            RewardsConfig.RewardEntry entry = config.entries[i];
+            RewardsPresetConfig.RewardEntry entry = config.entries[i];
             if (validateEntry(entry, i)) {
                 validEntries++;
             } else {
@@ -37,7 +37,7 @@ public final class RewardValidator {
 
     }
 
-    private boolean validateEntry(RewardsConfig.RewardEntry entry, int index) {
+    private boolean validateEntry(RewardsPresetConfig.RewardEntry entry, int index) {
         if (entry == null) {
                     validationMessages.add("Reward entry " + index + " is null");
             return false;
