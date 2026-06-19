@@ -86,13 +86,16 @@ public final class FallingStarCommand extends AbstractCommand {
                                         )
                                         .then("list", list -> list.executes(this::help))
                                         .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.executes(this::help))
                                         )
                                         .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.executes(this::help))
                                         )
                                         .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.executes(this::help))
                                         )
                                         .then("set", set -> set
                                                 .then("rewards", rewards -> rewards
@@ -123,13 +126,16 @@ public final class FallingStarCommand extends AbstractCommand {
                                 .then("rewards", rewards -> rewards
                                         .then("list", list -> list.executes(this::help))
                                         .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.executes(this::help))
                                         )
                                         .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.executes(this::help))
                                         )
                                         .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.executes(this::help))
                                         )
                                         .then("add", add -> add
                                                 .then(Commands.argument("name", StringArgumentType.string())
@@ -156,12 +162,13 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 )
                                         )
                                         .then("add-held-item", addHeldItem -> addHeldItem
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests((ctx, builder) -> {
-                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                            return builder.buildFuture();
-                                                        })
-                                                        .executes(this::help)
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name
+                                                            .suggests((ctx, builder) -> {
+                                                                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                return builder.buildFuture();
+                                                            })
+                                                            .executes(this::help)
                                                 )
                                         )
                                         .then("remove", remove -> remove
