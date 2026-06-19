@@ -1,6 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
@@ -29,13 +30,14 @@ import net.minecraft.network.chat.Component;
  *
  *     Planned:
  *
- *     /fallingstar preset event set [name] [reward|visuals] [preset name]
- *     /fallingstar preset [event|visuals] [disable|enable] [name]
- *     /fallingstar preset [event|visuals|rewards] list
- *     /fallingstar preset [event|visuals|rewards] create [name]
- *     /fallingstar preset [event|visuals|rewards] info [name]
- *     /fallingstar preset reward [name] add [item_id] [weight] [min] [max] (customModelData) (customData)
- *     /fallingstar preset reward [name] remove [item_id]
+ *     /fallingstar preset [events|visuals] [disable|enable] [name]
+ *     /fallingstar preset [events|visuals|rewards] list
+ *     /fallingstar preset [events|visuals|rewards] create [name]
+ *     /fallingstar preset [events|visuals|rewards] delete [name]
+ *     /fallingstar preset [events|visuals|rewards] info [name]
+ *     /fallingstar preset events set [reward|visuals] [name] [preset name]
+ *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
+ *     /fallingstar preset rewards remove [name] [item_id]
  *</pre>
  */
 public final class FallingStarCommand extends AbstractCommand {
@@ -61,6 +63,137 @@ public final class FallingStarCommand extends AbstractCommand {
                                                     return builder.buildFuture();
                                                 })
                                                 .executes(this::forcePreset))
+                        )
+
+                        .then("preset", preset -> preset
+
+                                .then("events", events -> events
+                                        .then("enable", enable -> enable
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.suggests((ctx, builder) -> {
+                                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                    return builder.buildFuture();
+                                                                })
+                                                                .executes(this::help)))
+                                        .then("disable", enable -> enable
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.suggests((ctx, builder) -> {
+                                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                    return builder.buildFuture();
+                                                                })
+                                                                .executes(this::help))
+                                        )
+                                        .then("list", list -> list.executes(this::help))
+                                        .then("create", create -> create
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("delete", delete -> delete
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("info", info -> info
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("set", set -> set
+                                                .then("rewards", rewards -> rewards
+                                                        .then(Commands.argument("name", StringArgumentType.string())
+                                                                .then(Commands.argument("preset-id", StringArgumentType.string())
+                                                                        .suggests((ctx, builder) -> {
+                                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                            return builder.buildFuture();
+                                                                        })
+                                                                        .executes(this::help)
+                                                                )
+                                                        )
+                                                )
+                                                .then("visuals", rewards -> rewards
+                                                        .then(Commands.argument("name", StringArgumentType.string())
+                                                                .then(Commands.argument("preset-id", StringArgumentType.string())
+                                                                        .suggests((ctx, builder) -> {
+                                                                            FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                            return builder.buildFuture();
+                                                                        })
+                                                                        .executes(this::help)
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+
+                                .then("rewards", rewards -> rewards
+                                        .then("list", list -> list.executes(this::help))
+                                        .then("create", create -> create
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("delete", delete -> delete
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("info", info -> info
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("add", add -> add
+                                                .then(Commands.argument("name", StringArgumentType.string())
+                                                        .suggests((ctx, builder) -> {
+                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                            return builder.buildFuture();
+                                                        })
+                                                        .then(
+                                                                Commands.argument("item_id", StringArgumentType.string())
+                                                                        .then(Commands.argument("weight", IntegerArgumentType.integer())
+                                                                                .then(Commands.argument("min", IntegerArgumentType.integer())
+                                                                                        .then(Commands.argument("max", IntegerArgumentType.integer())
+                                                                                                .executes(this::help)
+                                                                                                .then(Commands.argument("custom_model_data", IntegerArgumentType.integer())
+                                                                                                        .executes(this::help)
+                                                                                                        .then(Commands.argument("custom_data", StringArgumentType.string())
+                                                                                                                .executes(this::help)
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                        )
+                                                )
+                                        )
+                                        .then("remove", remove -> remove
+                                                .then(Commands.argument("name", StringArgumentType.string())
+                                                        .suggests((ctx, builder) -> {
+                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                            return builder.buildFuture();
+                                                        })
+                                                        .then(Commands.argument("item_id", StringArgumentType.string())
+                                                                .executes(this::help)
+                                                        )
+                                                )
+                                        )
+                                )
+
+                                .then("visuals", visuals -> visuals
+                                        .then("enable", enable -> enable
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.suggests((ctx, builder) -> {
+                                                                    FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                    return builder.buildFuture();
+                                                                })
+                                                                .executes(this::help)))
+                                        .then("disable", enable -> enable
+                                                .argument("name", StringArgumentType.string(),
+                                                        name -> name.suggests((ctx, builder) -> {
+                                                                    FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                                    return builder.buildFuture();
+                                                                })
+                                                                .executes(this::help)))
+                                        .then("list", list -> list.executes(this::help))
+                                        .then("create", create -> create
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("delete", delete -> delete
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                        .then("info", info -> info
+                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                        )
+                                )
+
                         )
                         .build()
         );
