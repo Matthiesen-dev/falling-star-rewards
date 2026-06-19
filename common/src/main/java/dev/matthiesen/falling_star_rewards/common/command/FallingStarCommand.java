@@ -37,6 +37,7 @@ import net.minecraft.network.chat.Component;
  *     /fallingstar preset [events|visuals|rewards] info [name]
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
+ *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
  *</pre>
  */
@@ -152,6 +153,15 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                                 )
                                                                         )
                                                         )
+                                                )
+                                        )
+                                        .then("add-held-item", addHeldItem -> addHeldItem
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests((ctx, builder) -> {
+                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
+                                                            return builder.buildFuture();
+                                                        })
+                                                        .executes(this::help)
                                                 )
                                         )
                                         .then("remove", remove -> remove
