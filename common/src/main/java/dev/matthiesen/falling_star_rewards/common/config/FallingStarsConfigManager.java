@@ -87,6 +87,16 @@ public final class FallingStarsConfigManager {
 
     }
 
+    public int calculateEventPresets() {
+        var eventConfigs = EVENTS_CONFIG.loadConfigs();
+        return eventConfigs.size();
+    }
+
+    public int calculateRewardPresets() {
+        var rewardsConfigs = REWARDS_CONFIG.loadConfigs();
+        return rewardsConfigs.size();
+    }
+
     public int RANDOM(int size) {
         return (int) (Math.random() * size);
     }

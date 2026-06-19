@@ -80,6 +80,15 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()));
 
         if (full) {
+            builder.addRow("Preset Generation Enabled", Boolean.toString(config.enablePresetGeneration));
+        }
+
+        builder
+                .addSection("Presets")
+                .addRow("Available Events", Integer.toString(mod.getConfigManager().calculateEventPresets()))
+                .addRow("Available Rewards", Integer.toString(mod.getConfigManager().calculateRewardPresets()));
+
+        if (full) {
             builder
                     .addSection("Announcements")
                     .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))

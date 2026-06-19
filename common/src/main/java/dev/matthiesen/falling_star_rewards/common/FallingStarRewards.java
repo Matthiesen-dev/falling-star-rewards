@@ -66,6 +66,10 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return CONFIG_MANAGER.getMainConfigManager().getConfig();
     }
 
+    public FallingStarsConfigManager getConfigManager() {
+        return CONFIG_MANAGER;
+    }
+
     public AnnouncementsConfig getAnnouncementsConfig() {
         return CONFIG_MANAGER.getAnnouncementsConfigManager().getConfig();
     }
