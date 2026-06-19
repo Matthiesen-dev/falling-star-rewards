@@ -17,6 +17,9 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -36,6 +39,8 @@ import java.util.function.Function;
  *     /fallingstar preset [events|visuals|rewards] list
  *     /fallingstar preset [events|visuals|rewards] create [name]
  *
+ *     /fallingstar preset [events|visuals|rewards] delete [name]
+ *
  *     Planned:
  *
  *     /fallingstar preset [events|visuals|rewards] info [name]
@@ -44,12 +49,12 @@ import java.util.function.Function;
  *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
  *
- *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar confirm-delete [event_id]
  *</pre>
  */
 public final class FallingStarCommand extends AbstractCommand {
     public static final FallingStarCommand CMD = new FallingStarCommand();
+    private static final Map<String, PresetDeletionRequest> DELETION_REQUESTS = new LinkedHashMap<>();
 
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
@@ -98,7 +103,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         )
                                         .then("delete", delete -> delete
                                                 .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::help))
+                                                        name -> name.executes(this::presetEventsDelete))
                                         )
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(),
@@ -138,7 +143,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         )
                                         .then("delete", delete -> delete
                                                 .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::help))
+                                                        name -> name.executes(this::presetRewardsDelete))
                                         )
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(),
@@ -213,7 +218,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         )
                                         .then("delete", delete -> delete
                                                 .argument("name", StringArgumentType.string(), name ->
-                                                        name.executes(this::help))
+                                                        name.executes(this::presetVisualsDelete))
                                         )
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name ->
@@ -355,6 +360,49 @@ public final class FallingStarCommand extends AbstractCommand {
         return 1;
     }
 
+    // This should be a random set of characters roughly 8 characters long
+    private String generateDeletionKey() {
+        int length = 8;
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder key = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            key.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return key.toString();
+    }
+
+    private int presetEventsDelete(CommandContext<CommandSourceStack> context) {
+        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), PresetDeletionRequest.PRESET_TYPES.EVENT, "event");
+    }
+
+    private int presetRewardsDelete(CommandContext<CommandSourceStack> context) {
+        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(), PresetDeletionRequest.PRESET_TYPES.REWARDS, "rewards");
+    }
+
+    private int presetVisualsDelete(CommandContext<CommandSourceStack> context) {
+        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), PresetDeletionRequest.PRESET_TYPES.VISUALS, "visuals");
+    }
+
+    private <T> int presetDelete(
+            CommandContext<CommandSourceStack> context,
+            ConfigFolderManager<T> manager,
+            PresetDeletionRequest.PRESET_TYPES presetType,
+            String presetTypeLabel
+    ) {
+        String name = StringArgumentType.getString(context, "name");
+        if (!manager.getConfigs().containsKey(name)) {
+            String capitalizedType = presetTypeLabel.substring(0, 1).toUpperCase() + presetTypeLabel.substring(1);
+            context.getSource().sendFailure(Component.literal(capitalizedType + " preset not found: " + name).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        String eventKey = generateDeletionKey();
+        PresetDeletionRequest request = new PresetDeletionRequest(presetType, name);
+        DELETION_REQUESTS.put(eventKey, request);
+        context.getSource().sendSystemMessage(Component.literal("Are you sure you want to delete the " + presetTypeLabel + " preset '" + name + "'? This action cannot be undone. If you're sure, run the command: /fallingstar confirm-delete " + eventKey).withStyle(ChatFormatting.YELLOW));
+        return 1;
+    }
+
     @Override
     public int action(CommandContext<CommandSourceStack> context) {
         return 0;
@@ -471,5 +519,35 @@ public final class FallingStarCommand extends AbstractCommand {
                 "Forced falling star cycle complete"
         ).withStyle(ChatFormatting.GREEN));
         return spawned;
+    }
+
+    public static class PresetDeletionRequest {
+        private final PRESET_TYPES presetType;
+        private final String presetName;
+        private final long requestTime;
+
+        public PresetDeletionRequest(PRESET_TYPES presetType, String presetName) {
+            this.presetType = presetType;
+            this.presetName = presetName;
+            this.requestTime = System.currentTimeMillis();
+        }
+
+        public PRESET_TYPES getPresetType() {
+            return presetType;
+        }
+
+        public String getPresetName() {
+            return presetName;
+        }
+
+        public long getRequestTime() {
+            return requestTime;
+        }
+
+        public enum PRESET_TYPES {
+            EVENT,
+            REWARDS,
+            VISUALS;
+        }
     }
 }
