@@ -14,17 +14,11 @@ public final class EventPresetConfig {
     @SerializedName("visualsPresetId")
     public String visualsPresetId = "base";
 
-    @SerializedName("scheduler")
-    public Scheduler scheduler = new Scheduler();
-
     @SerializedName("activation")
     public Activation activation = new Activation();
 
     @SerializedName("spawn")
     public Spawn spawn = new Spawn();
-
-    @SerializedName("claim")
-    public Claim claim = new Claim();
 
     public static final class Activation {
         @SerializedName("requireNight")
@@ -52,28 +46,6 @@ public final class EventPresetConfig {
 
         @SerializedName("allowWaterSpawns")
         public boolean allowWaterSpawns = false;
-    }
-
-    public static final class Claim {
-        @SerializedName("lifeTicks")
-        public int lifeTicks = 20 * 45;
-
-        @SerializedName("pickupDelayTicks")
-        public int pickupDelayTicks = 10;
-
-        @SerializedName("maxActiveDrops")
-        public int maxActiveDrops = 64;
-    }
-
-    public static final class Scheduler {
-        @SerializedName("baseIntervalTicks")
-        public int baseIntervalTicks = 20 * 120;
-
-        @SerializedName("intervalJitterTicks")
-        public int intervalJitterTicks = 20 * 30;
-
-        @SerializedName("maxStarsPerCycle")
-        public int maxStarsPerCycle = 1;
     }
 
     @SuppressWarnings("unused")

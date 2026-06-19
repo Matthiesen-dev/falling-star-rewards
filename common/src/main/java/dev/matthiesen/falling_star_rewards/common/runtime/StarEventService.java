@@ -4,6 +4,7 @@ import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -106,13 +107,13 @@ public final class StarEventService {
         return removed;
     }
 
-    public int runCycle(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
-        return runCycle(server, presetConfig, announcementsConfig, false);
+    public int runCycle(MinecraftServer server, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
+        return runCycle(server, mainConfig, presetConfig, announcementsConfig, false);
     }
 
-    public int runCycle(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
-        int cappedMaxStars = Math.max(1, presetConfig.eventConfig.scheduler.maxStarsPerCycle);
-        int maxActiveDrops = Math.max(1, presetConfig.eventConfig.claim.maxActiveDrops);
+    public int runCycle(MinecraftServer server, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
+        int cappedMaxStars = Math.max(1, mainConfig.scheduler.maxStarsPerCycle);
+        int maxActiveDrops = Math.max(1, mainConfig.claim.maxActiveDrops);
         if (activeDrops.size() >= maxActiveDrops) {
             return 0;
         }
@@ -135,7 +136,7 @@ public final class StarEventService {
                 break;
             }
 
-            if (spawnStarNearPlayer(player, presetConfig, announcementsConfig)) {
+            if (spawnStarNearPlayer(player, mainConfig, presetConfig, announcementsConfig)) {
                 spawned++;
             }
 
@@ -176,7 +177,7 @@ public final class StarEventService {
         return !presetConfig.eventConfig.activation.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
-    private boolean spawnStarNearPlayer(ServerPlayer player, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
+    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
         ServerLevel level = player.serverLevel();
         int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn.maxLocationAttempts);
 
@@ -207,9 +208,9 @@ public final class StarEventService {
                     spawnPos.getZ() + 0.5,
                     stack
             );
-            itemEntity.setPickUpDelay(Math.max(0, presetConfig.eventConfig.claim.pickupDelayTicks));
+            itemEntity.setPickUpDelay(Math.max(0, mainConfig.claim.pickupDelayTicks));
             level.addFreshEntity(itemEntity);
-            int lifeTicks = Math.max(1, presetConfig.eventConfig.claim.lifeTicks);
+            int lifeTicks = Math.max(1, mainConfig.claim.lifeTicks);
             long startTick = level.getServer().getTickCount();
             activeDrops.put(
                     itemEntity.getUUID(),

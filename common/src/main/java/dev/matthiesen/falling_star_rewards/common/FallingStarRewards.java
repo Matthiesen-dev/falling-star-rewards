@@ -79,12 +79,17 @@ public final class FallingStarRewards extends AbstractCommonMod {
     }
 
     public int forceCycle(MinecraftServer server, String presetId, boolean bypassActivationChecks) {
+        MainConfig config = getMainConfig();
+        if (!config.enabled) {
+            createInfoLog("Cannot force cycle - mod is disabled");
+            return 0;
+        }
         var preset = presetId != null ? CONFIG_MANAGER.loadPresetConfig(presetId) : CONFIG_MANAGER.loadRandomEventPreset();
         if (preset == null) {
             createWarnLog("No event presets available to start a cycle");
             return 0;
         }
-        return starEventService.runCycle(server, preset, getAnnouncementsConfig(), bypassActivationChecks);
+        return starEventService.runCycle(server, config, preset, getAnnouncementsConfig(), bypassActivationChecks);
     }
 
     public int getActiveDropCount() {
@@ -114,8 +119,8 @@ public final class FallingStarRewards extends AbstractCommonMod {
                 AnnouncementsConfig announcementsConfig = getAnnouncementsConfig();
                 starEventService.onServerTick(server, preset);
                 var gameTick = server.getTickCount();
-                if (orchestrator.shouldStartCycle(gameTick, preset)) {
-                    int spawned = starEventService.runCycle(server, preset, announcementsConfig);
+                if (orchestrator.shouldStartCycle(gameTick, config)) {
+                    int spawned = starEventService.runCycle(server, config, preset, announcementsConfig);
                     if (spawned > 0) {
                         createInfoLog("Starting star cycle at tick " + gameTick + " (spawned=" + spawned + ")");
                     }

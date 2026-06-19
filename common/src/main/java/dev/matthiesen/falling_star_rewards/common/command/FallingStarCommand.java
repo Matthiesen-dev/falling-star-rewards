@@ -97,7 +97,17 @@ public final class FallingStarCommand extends AbstractCommand {
                     .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))
                     .addRow("Scope", announcementsConfig.scope)
                     .addRow("Use Action Bar Overlay", Boolean.toString(announcementsConfig.useActionBar))
-                    .addRow("Message", announcementsConfig.spawnMessage);
+                    .addRow("Message", announcementsConfig.spawnMessage)
+
+                    .addSection("Claim")
+                    .addRow("Life Ticks", Integer.toString(config.claim.lifeTicks))
+                    .addRow("Pickup Delay Ticks", Integer.toString(config.claim.pickupDelayTicks))
+                    .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
+
+                    .addSection("Scheduling")
+                    .addRow("Base Tick Interval", Integer.toString(config.scheduler.baseIntervalTicks))
+                    .addRow("Interval Jitter", Integer.toString(config.scheduler.intervalJitterTicks))
+                    .addRow("Max Stars Per Cycle", Integer.toString(config.scheduler.maxStarsPerCycle));
         }
 
         return builder.build();
