@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
+import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
+import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -17,19 +19,22 @@ public final class FallingStarCommand extends AbstractCommand {
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
         dispatcher.register(
-                Commands.literal("fallingstar")
-                        .requires(src -> src.hasPermission(4))
-                        .then(Commands.literal("help").executes(this::help))
-                        .then(Commands.literal("reload").executes(this::reload))
-                        .then(Commands.literal("status")
+                new CommandBuilder("fallingstar", src -> src.hasPermission(4))
+                        .then("help", help -> help.executes(this::help))
+                        .then("reload", reload -> reload.executes(this::reload))
+                        .then("cleanup", cleanup -> cleanup.executes(this::cleanup))
+                        .then("status", status -> status
                                 .executes(this::status)
-                                .then(Commands.literal("brief").executes(this::status))
-                                .then(Commands.literal("full").executes(this::statusFull)))
-                        .then(Commands.literal("cleanup").executes(this::cleanup))
-                        .then(Commands.literal("force")
+                                .then("brief", brief -> brief.executes(this::status))
+                                .then("full", full -> full.executes(this::statusFull))
+                        )
+                        .then("force", force -> force
                                 .executes(this::forceOnce)
-                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 16))
-                                        .executes(this::forceCount)))
+                                .argument("count", IntegerArgumentType.integer(1, 16),
+                                        count -> count.executes(this::forceCount)
+                                )
+                        )
+                        .build()
         );
     }
 
@@ -68,7 +73,7 @@ public final class FallingStarCommand extends AbstractCommand {
         var visualsConfig = mod.getVisualsConfig();
         var announcementsConfig = mod.getAnnouncementsConfig();
 
-        KeyValueTableComponentBuilder builder = new KeyValueTableComponentBuilder(
+        ChatTableBuilder builder = new ChatTableBuilder(
                 full ? "Falling Star Rewards Status (Full)" : "Falling Star Rewards Status"
         )
                 .addSection("Runtime")
@@ -135,7 +140,7 @@ public final class FallingStarCommand extends AbstractCommand {
     }
 
     private Component buildHelpTable() {
-        return new KeyValueTableComponentBuilder("Falling Star Rewards Commands")
+        return new ChatTableBuilder("Falling Star Rewards Commands")
                 .addSection("General")
                 .addRow("/fallingstar help", "Show this command list")
                 .addRow("/fallingstar reload", "Reload config from disk")
