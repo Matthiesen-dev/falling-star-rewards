@@ -44,6 +44,8 @@ import java.util.function.Function;
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
+ *
+ *     /fallingstar confirm-delete [event_id]
  *</pre>
  */
 public final class FallingStarCommand extends AbstractCommand {
@@ -105,7 +107,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("set", set -> set
                                                 .then("rewards", rewards -> rewards
                                                         .then(Commands.argument("name", StringArgumentType.string())
-                                                                .then(Commands.argument("preset-id", StringArgumentType.string())
+                                                                .then(Commands.argument("preset_id", StringArgumentType.string())
                                                                         .suggests((ctx, builder) -> {
                                                                             FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
                                                                             return builder.buildFuture();
@@ -116,7 +118,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 )
                                                 .then("visuals", rewards -> rewards
                                                         .then(Commands.argument("name", StringArgumentType.string())
-                                                                .then(Commands.argument("preset-id", StringArgumentType.string())
+                                                                .then(Commands.argument("preset_id", StringArgumentType.string())
                                                                         .suggests((ctx, builder) -> {
                                                                             FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
                                                                             return builder.buildFuture();
@@ -219,6 +221,10 @@ public final class FallingStarCommand extends AbstractCommand {
                                         )
                                 )
 
+                        )
+                        .then("confirm-delete", confirmDelete -> confirmDelete
+                                .argument("event_id", StringArgumentType.string(),
+                                        eventId -> eventId.executes(this::help))
                         )
                         .build()
         );
