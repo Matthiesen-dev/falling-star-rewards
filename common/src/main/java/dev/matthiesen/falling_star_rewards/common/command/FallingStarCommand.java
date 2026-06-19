@@ -5,9 +5,12 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
+import dev.matthiesen.common.matthiesen_lib_api.config.ConfigFolderManager;
 import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -75,14 +78,14 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                     FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
                                                                     return builder.buildFuture();
                                                                 })
-                                                                .executes(this::help)))
+                                                                .executes(this::presetEventEnable)))
                                         .then("disable", enable -> enable
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name.suggests((ctx, builder) -> {
                                                                     FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
                                                                     return builder.buildFuture();
                                                                 })
-                                                                .executes(this::help))
+                                                                .executes(this::presetEventDisable))
                                         )
                                         .then("list", list -> list.executes(this::help))
                                         .then("create", create -> create
@@ -191,29 +194,80 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                     FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
                                                                     return builder.buildFuture();
                                                                 })
-                                                                .executes(this::help)))
+                                                                .executes(this::presetVisualsEnable)))
                                         .then("disable", enable -> enable
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name.suggests((ctx, builder) -> {
                                                                     FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
                                                                     return builder.buildFuture();
                                                                 })
-                                                                .executes(this::help)))
+                                                                .executes(this::presetVisualsDisable)))
                                         .then("list", list -> list.executes(this::help))
                                         .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(), name ->
+                                                        name.executes(this::help))
                                         )
                                         .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(), name ->
+                                                        name.executes(this::help))
                                         )
                                         .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(), name ->
+                                                        name.executes(this::help))
                                         )
                                 )
 
                         )
                         .build()
         );
+    }
+
+    private <T> void updateConfigAndSave(ConfigFolderManager<T> manager, String preset, T config) {
+        manager.setConfig(preset, config);
+        manager.saveConfig(preset);
+    }
+
+    private Component presetEnabledState(String preset, boolean value) {
+        return Component.literal("Preset " + preset + " has been " + (value ? "enabled" : "disabled") + ".").withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> void presetEnableDisable(CommandContext<CommandSourceStack> context, ConfigFolderManager<T> manager, boolean value) {
+        String preset = StringArgumentType.getString(context, "name");
+        var presetConfig = manager.getConfig(preset);
+        switch (presetConfig) {
+            case EventPresetConfig eventPresetConfig -> {
+                eventPresetConfig.enabled = value;
+                updateConfigAndSave(manager, preset, (T) eventPresetConfig);
+                context.getSource().sendSystemMessage(presetEnabledState(preset, value));
+            }
+            case VisualsPresetConfig visualsPresetConfig -> {
+                visualsPresetConfig.enabled = value;
+                updateConfigAndSave(manager, preset, (T) visualsPresetConfig);
+                context.getSource().sendSystemMessage(presetEnabledState(preset, value));
+            }
+            default -> context.getSource().sendFailure(Component.literal("Preset not found: " + preset).withStyle(ChatFormatting.RED));
+        }
+    }
+
+    public int presetEventEnable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), true);
+        return 1;
+    }
+
+    public int presetEventDisable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), false);
+        return 1;
+    }
+
+    public int presetVisualsEnable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), true);
+        return 1;
+    }
+
+    public int presetVisualsDisable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), false);
+        return 1;
     }
 
     @Override
