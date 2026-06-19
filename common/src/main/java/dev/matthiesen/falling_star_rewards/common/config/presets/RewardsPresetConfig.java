@@ -1,13 +1,10 @@
-package dev.matthiesen.falling_star_rewards.common.config;
+package dev.matthiesen.falling_star_rewards.common.config.presets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
-public final class RewardsConfig {
-    @SerializedName("poolMode")
-    public String poolMode = "weighted";
-
+public final class RewardsPresetConfig {
     @SerializedName("entries")
     public RewardEntry[] entries = new RewardEntry[] {
             new RewardEntry("minecraft:amethyst_shard", 20, 1, 3),

@@ -1,16 +1,13 @@
 package dev.matthiesen.falling_star_rewards.common;
 
 import dev.matthiesen.common.matthiesen_lib_api.abstracts.AbstractCommonMod;
-import dev.matthiesen.common.matthiesen_lib_api.config.ConfigManager;
 import dev.matthiesen.common.matthiesen_lib_api.core.interfaces.MatthiesenLibServerEventHandler;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
+import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
-import dev.matthiesen.falling_star_rewards.common.config.RewardsConfig;
-import dev.matthiesen.falling_star_rewards.common.config.VisualsConfig;
 import dev.matthiesen.falling_star_rewards.common.runtime.StarEventOrchestrator;
 import dev.matthiesen.falling_star_rewards.common.runtime.StarEventService;
-import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import dev.matthiesen.libs.faststats.Token;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
@@ -21,27 +18,21 @@ public final class FallingStarRewards extends AbstractCommonMod {
     private static @Token final String METRICS_TOKEN = "3b8d656e1efa1d6eaa2ec90c7ad832bd";
 
     public static final FallingStarRewards INSTANCE = new FallingStarRewards();
-
-    private final ConfigManager<AnnouncementsConfig> ANNOUNCEMENTS_CONFIG_MANAGER =
-            createConfigManager(AnnouncementsConfig.class, "announcements");
-    private final ConfigManager<MainConfig> MAIN_CONFIG_MANAGER =
-            createConfigManager(MainConfig.class, "config");
-    private final ConfigManager<RewardsConfig> REWARDS_CONFIG_MANAGER =
-            createConfigManager(RewardsConfig.class, "rewards");
-    private final ConfigManager<VisualsConfig> VISUALS_CONFIG_MANAGER =
-            createConfigManager(VisualsConfig.class, "visuals");
+    public static FallingStarsConfigManager CONFIG_MANAGER;
 
     private final StarEventOrchestrator orchestrator = new StarEventOrchestrator();
     private final StarEventService starEventService = new StarEventService();
-    private final RewardValidator rewardValidator = new RewardValidator();
 
     public FallingStarRewards() {
         super(MOD_ID, MOD_NAME);
+        CONFIG_MANAGER = new FallingStarsConfigManager(this);
     }
 
     @Override
     public void initialize() {
         super.initialize();
+        CONFIG_MANAGER.init();
+
         reload().run();
         registerServerEventHandler(getServerEventHandler());
         registerCommand(FallingStarCommand.CMD);
@@ -58,43 +49,25 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return () -> {
             loadConfigs();
             MainConfig config = getMainConfig();
-            RewardsConfig rewardsConfig = getRewardsConfig();
-            rewardValidator.validateRewards(rewardsConfig);
-            for (String message : rewardValidator.getValidationMessages()) {
-                createWarnLog(message);
-            }
-            if (rewardValidator.getInvalidEntries() > 0) {
-                createWarnLog("Reward validation: " + rewardValidator.getValidEntries() + " valid, "
-                        + rewardValidator.getInvalidEntries() + " invalid");
-            } else if (rewardValidator.getValidEntries() > 0) {
-                createInfoLog("All " + rewardValidator.getValidEntries() + " reward entries validated successfully");
-            }
-            createInfoLog("Reloaded Config (enabled=" + config.enabled
-                    + ", baseIntervalTicks=" + config.scheduler.baseIntervalTicks + ")");
+            CONFIG_MANAGER.validateRewardsConfigs();
+            createInfoLog("Reloaded Config (enabled=" + config.enabled + ")");
         };
     }
 
     public void loadConfigs() {
-        ANNOUNCEMENTS_CONFIG_MANAGER.loadConfig();
-        MAIN_CONFIG_MANAGER.loadConfig();
-        REWARDS_CONFIG_MANAGER.loadConfig();
-        VISUALS_CONFIG_MANAGER.loadConfig();
+        CONFIG_MANAGER.getMainConfigManager().loadConfig();
+        CONFIG_MANAGER.getEventsConfigManager().loadConfigs();
+        CONFIG_MANAGER.getAnnouncementsConfigManager().loadConfig();
+        CONFIG_MANAGER.getRewardsConfigManager().loadConfigs();
+        CONFIG_MANAGER.getVisualsConfigManager().loadConfigs();
     }
 
     public MainConfig getMainConfig() {
-        return MAIN_CONFIG_MANAGER.getConfig();
-    }
-
-    public RewardsConfig getRewardsConfig() {
-        return REWARDS_CONFIG_MANAGER.getConfig();
-    }
-
-    public VisualsConfig getVisualsConfig() {
-        return VISUALS_CONFIG_MANAGER.getConfig();
+        return CONFIG_MANAGER.getMainConfigManager().getConfig();
     }
 
     public AnnouncementsConfig getAnnouncementsConfig() {
-        return ANNOUNCEMENTS_CONFIG_MANAGER.getConfig();
+        return CONFIG_MANAGER.getAnnouncementsConfigManager().getConfig();
     }
 
     public long getNextCycleTick() {
@@ -102,7 +75,12 @@ public final class FallingStarRewards extends AbstractCommonMod {
     }
 
     public int forceCycle(MinecraftServer server, int maxStars, boolean bypassActivationChecks) {
-        return starEventService.runCycle(server, getMainConfig(), getRewardsConfig(), getVisualsConfig(), getAnnouncementsConfig(), maxStars, bypassActivationChecks);
+        var preset = CONFIG_MANAGER.loadRandomEventPreset();
+        if (preset == null) {
+            createWarnLog("No event presets available to start a cycle");
+            return 0;
+        }
+        return starEventService.runCycle(server, preset, getAnnouncementsConfig(), maxStars, bypassActivationChecks);
     }
 
     public int getActiveDropCount() {
@@ -111,10 +89,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
     public int cleanupActiveDrops(MinecraftServer server) {
         return starEventService.cleanupActiveDrops(server);
-    }
-
-    public RewardValidator getRewardValidator() {
-        return rewardValidator;
     }
 
     public MatthiesenLibServerEventHandler getServerEventHandler() {
@@ -127,13 +101,17 @@ public final class FallingStarRewards extends AbstractCommonMod {
             @Override
             public void onServerTick(MinecraftServer server) {
                 MainConfig config = getMainConfig();
-                RewardsConfig rewardsConfig = getRewardsConfig();
-                VisualsConfig visualsConfig = getVisualsConfig();
+                if (!config.enabled) return;
+                var preset = CONFIG_MANAGER.loadRandomEventPreset();
+                if (preset == null) {
+                    createWarnLog("No event presets available to start a cycle");
+                    return;
+                }
                 AnnouncementsConfig announcementsConfig = getAnnouncementsConfig();
-                starEventService.onServerTick(server, visualsConfig);
+                starEventService.onServerTick(server, preset);
                 var gameTick = server.getTickCount();
-                if (orchestrator.shouldStartCycle(gameTick, config)) {
-                    int spawned = starEventService.runCycle(server, config, rewardsConfig, visualsConfig, announcementsConfig);
+                if (orchestrator.shouldStartCycle(gameTick, preset)) {
+                    int spawned = starEventService.runCycle(server, preset, announcementsConfig);
                     if (spawned > 0) {
                         createInfoLog("Starting star cycle at tick " + gameTick + " (spawned=" + spawned + ")");
                     }

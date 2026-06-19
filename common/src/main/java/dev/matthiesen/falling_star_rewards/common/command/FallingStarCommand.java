@@ -69,8 +69,6 @@ public final class FallingStarCommand extends AbstractCommand {
     private Component buildStatusTable(boolean full) {
         var mod = FallingStarRewards.INSTANCE;
         var config = mod.getMainConfig();
-        var rewardsConfig = mod.getRewardsConfig();
-        var visualsConfig = mod.getVisualsConfig();
         var announcementsConfig = mod.getAnnouncementsConfig();
 
         ChatTableBuilder builder = new ChatTableBuilder(
@@ -79,62 +77,15 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addSection("Runtime")
                 .addRow("Enabled", Boolean.toString(config.enabled))
                 .addRow("Next Cycle Tick", Long.toString(mod.getNextCycleTick()))
-                .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()))
-                .addSection("Scheduler")
-                .addRow("Base Interval (ticks)", Integer.toString(config.scheduler.baseIntervalTicks))
-                .addRow("Jitter (ticks)", Integer.toString(config.scheduler.intervalJitterTicks))
-                .addRow("Max Stars/Cycle", Integer.toString(config.scheduler.maxStarsPerCycle))
-                .addSection("Claim")
-                .addRow("Life Ticks", Integer.toString(config.claim.lifeTicks))
-                .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
-                .addRow("Pickup Delay", Integer.toString(config.claim.pickupDelayTicks))
-                .addSection("Visuals")
-                .addRow("Particle Preset", visualsConfig.particlePreset)
-                .addRow("Impact Preset", visualsConfig.impactParticlePreset)
-                .addSection("Audio")
-                .addRow("Impact Sound", visualsConfig.impactSoundId)
-                .addRow("Travel Sound", visualsConfig.travelSoundId);
+                .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()));
 
         if (full) {
             builder
-                    .addSection("Activation")
-                    .addRow("Require Night", Boolean.toString(config.activation.requireNight))
-                    .addRow("Require Surface", Boolean.toString(config.activation.requireSurfaceAccess))
-                    .addRow("Weather Mode", config.activation.weatherMode)
-                    .addSection("Spawn")
-                    .addRow("Scope", config.spawn.targetScope)
-                    .addRow("Min Radius", Integer.toString(config.spawn.minRadius))
-                    .addRow("Max Radius", Integer.toString(config.spawn.maxRadius))
-                    .addRow("Location Attempts", Integer.toString(config.spawn.maxLocationAttempts))
-                    .addRow("Allow Water", Boolean.toString(config.spawn.allowWaterSpawns))
                     .addSection("Announcements")
                     .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))
                     .addRow("Scope", announcementsConfig.scope)
                     .addRow("Use Action Bar Overlay", Boolean.toString(announcementsConfig.useActionBar))
-                    .addRow("Message", announcementsConfig.spawnMessage)
-                    .addSection("Visual FX")
-                    .addRow("Trail Enabled", Boolean.toString(visualsConfig.enabled))
-                    .addRow("Trail Distance", Integer.toString(visualsConfig.fallDistance))
-                    .addRow("Trail Interval", Integer.toString(visualsConfig.emissionIntervalTicks))
-                    .addRow("Trail Count", Integer.toString(visualsConfig.particlesPerEmission))
-                    .addRow("Impact Burst", Boolean.toString(visualsConfig.impactBurstEnabled))
-                    .addRow("Impact Count", Integer.toString(visualsConfig.impactParticleCount))
-                    .addRow("Impact Spread", Double.toString(visualsConfig.impactSpread))
-                    .addSection("Audio Detail")
-                    .addRow("Impact Enabled", Boolean.toString(visualsConfig.impactSoundEnabled))
-                    .addRow("Impact Volume", Float.toString(visualsConfig.impactSoundVolume))
-                    .addRow("Impact Pitch Min", Float.toString(visualsConfig.impactSoundPitchMin))
-                    .addRow("Impact Pitch Max", Float.toString(visualsConfig.impactSoundPitchMax))
-                    .addRow("Travel Enabled", Boolean.toString(visualsConfig.travelSoundEnabled))
-                    .addRow("Travel Volume", Float.toString(visualsConfig.travelSoundVolume))
-                    .addRow("Travel Pitch Min", Float.toString(visualsConfig.travelSoundPitchMin))
-                    .addRow("Travel Pitch Max", Float.toString(visualsConfig.travelSoundPitchMax))
-                    .addRow("Travel Interval", Integer.toString(visualsConfig.travelSoundIntervalTicks))
-                    .addSection("Rewards")
-                    .addRow("Pool Mode", rewardsConfig.poolMode)
-                    .addRow("Total Entries", Integer.toString(rewardsConfig.entries.length))
-                    .addRow("Valid Entries", Integer.toString(mod.getRewardValidator().getValidEntries()))
-                    .addRow("Invalid Entries", Integer.toString(mod.getRewardValidator().getInvalidEntries()));
+                    .addRow("Message", announcementsConfig.spawnMessage);
         }
 
         return builder.build();

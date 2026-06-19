@@ -1,18 +1,18 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Holds server-side timing state for future star event spawning.
- * Platform layers should call {@link #shouldStartCycle(long, MainConfig)} every server tick.
+ * Platform layers should call {@link #shouldStartCycle(long, FallingStarsConfigManager.LoadedPresetConfig)} every server tick.
  */
 public final class StarEventOrchestrator {
     private long nextCycleTick = 0L;
 
-    public boolean shouldStartCycle(long currentTick, MainConfig config) {
-        if (!config.enabled) {
+    public boolean shouldStartCycle(long currentTick, FallingStarsConfigManager.LoadedPresetConfig config) {
+        if (!config.eventConfig.enabled) {
             return false;
         }
 
@@ -28,9 +28,9 @@ public final class StarEventOrchestrator {
         return nextCycleTick;
     }
 
-    private long calculateNextInterval(MainConfig config) {
-        int base = Math.max(20, config.scheduler.baseIntervalTicks);
-        int jitter = Math.max(0, config.scheduler.intervalJitterTicks);
+    private long calculateNextInterval(FallingStarsConfigManager.LoadedPresetConfig config) {
+        int base = Math.max(20, config.eventConfig.scheduler.baseIntervalTicks);
+        int jitter = Math.max(0, config.eventConfig.scheduler.intervalJitterTicks);
         if (jitter == 0) {
             return base;
         }
