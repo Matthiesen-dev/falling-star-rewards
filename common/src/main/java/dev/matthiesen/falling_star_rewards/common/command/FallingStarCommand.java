@@ -1,44 +1,122 @@
 package dev.matthiesen.falling_star_rewards.common.command;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
-import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
+import dev.matthiesen.common.matthiesen_lib_api.config.ConfigFolderManager;
 import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
+import dev.matthiesen.falling_star_rewards.common.command.subcommands.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * Falling Star Commands
+ *<pre>
+ *     Current:
+ *
+ *     /fallingstar help
+ *     /fallingstar reload
+ *     /fallingstar cleanup
+ *     /fallingstar status
+ *     /fallingstar status brief
+ *     /fallingstar status full
+ *     /fallingstar force
+ *     /fallingstar force [preset]
+ *     /fallingstar confirm-delete [event_id]
+ *     /fallingstar preset [events|visuals] [disable|enable] [name]
+ *     /fallingstar preset [events|visuals|rewards] list
+ *     /fallingstar preset [events|visuals|rewards] create [name]
+ *     /fallingstar preset [events|visuals|rewards] delete [name]
+ *     /fallingstar preset [events|visuals|rewards] info [name]
+ *     /fallingstar preset events set [rewards|visuals] [name] [preset name]
+ *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
+ *     /fallingstar preset rewards add-held-item [name] [weight] [min] [max]
+ *     /fallingstar preset rewards remove [name] [item_id]
+ *
+ *     Planned:
+ *
+ *     N/A
+ *</pre>
+ */
 public final class FallingStarCommand extends AbstractCommand {
     public static final FallingStarCommand CMD = new FallingStarCommand();
+    private static final Map<String, PresetDeletionRequest> DELETION_REQUESTS = new LinkedHashMap<>();
+    private static final long DELETION_REQUEST_TTL_MS = 5L * 60L * 1000L;
+
+    public static void pruneExpiredDeletionRequests() {
+        DELETION_REQUESTS.entrySet().removeIf(entry -> isDeletionRequestExpired(entry.getValue()));
+    }
+
+    public static boolean isDeletionRequestExpired(PresetDeletionRequest request) {
+        return System.currentTimeMillis() - request.createdAtMs() > DELETION_REQUEST_TTL_MS;
+    }
+
+    public static long getDeletionRequestTtlMinutes() {
+        return DELETION_REQUEST_TTL_MS / 60_000L;
+    }
+
+    public static void putDeletionRequest(String key, PresetDeletionRequest request) {
+        DELETION_REQUESTS.put(key, request);
+    }
+
+    public static PresetDeletionRequest removeDeletionRequest(String key) {
+        return DELETION_REQUESTS.remove(key);
+    }
+
+    public static CompletableFuture<Suggestions> getPresetList(SuggestionsBuilder builder, ConfigFolderManager<?> manager) {
+        manager.getConfigs().keySet().forEach(builder::suggest);
+        return builder.buildFuture();
+    }
+
+    @SuppressWarnings("unused")
+    public static CompletableFuture<Suggestions> getEventsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager());
+    }
+
+    @SuppressWarnings("unused")
+    public static CompletableFuture<Suggestions> getRewardsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager());
+    }
+
+    @SuppressWarnings("unused")
+    public static CompletableFuture<Suggestions> getVisualsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager());
+    }
 
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
         dispatcher.register(
                 new CommandBuilder("fallingstar", src -> src.hasPermission(4))
-                        .then("help", help -> help.executes(this::help))
-                        .then("reload", reload -> reload.executes(this::reload))
-                        .then("cleanup", cleanup -> cleanup.executes(this::cleanup))
-                        .then("status", status -> status
-                                .executes(this::status)
-                                .then("brief", brief -> brief.executes(this::status))
-                                .then("full", full -> full.executes(this::statusFull))
-                        )
-                        .then("force", force -> force
-                                .executes(this::forceOnce)
-                                .argument("preset", StringArgumentType.string(),
-                                        preset -> preset.suggests((ctx, builder) -> {
-                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                    return builder.buildFuture();
-                                                })
-                                                .executes(this::forcePreset))
-                        )
+                        .then(getReloadSubCommand())
+                        .then(getCleanupSubCommand())
+                        .then(HelpCommand.getHelpSubCommand())
+                        .then(StatusCommand.getStatusSubCommand())
+                        .then(ForceCommand.getForceSubCommand())
+                        .then(ConfirmDeleteCommand.getConfirmDeleteSubCommand())
+                        .then(PresetsCommand.getPresetSubCommand())
                         .build()
         );
+    }
+
+    public CommandBuilder getReloadSubCommand() {
+        return new CommandBuilder("reload")
+                .executes(this::reload);
+    }
+
+    public CommandBuilder getCleanupSubCommand() {
+        return new CommandBuilder("cleanup")
+                .executes(this::cleanup);
     }
 
     @Override
@@ -54,108 +132,11 @@ public final class FallingStarCommand extends AbstractCommand {
         return 1;
     }
 
-    public int help(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSystemMessage(buildHelpTable());
-        return 1;
-    }
-
-    public int status(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSystemMessage(buildStatusTable(false));
-        return 1;
-    }
-
-    public int statusFull(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSystemMessage(buildStatusTable(true));
-        return 1;
-    }
-
-    private Component buildStatusTable(boolean full) {
-        var mod = FallingStarRewards.INSTANCE;
-        var config = mod.getMainConfig();
-        var announcementsConfig = mod.getAnnouncementsConfig();
-
-        ChatTableBuilder builder = new ChatTableBuilder(
-                full ? "Falling Star Rewards Status (Full)" : "Falling Star Rewards Status"
-        )
-                .addSection("Runtime")
-                .addRow("Enabled", Boolean.toString(config.enabled))
-                .addRow("Next Cycle Tick", Long.toString(mod.getNextCycleTick()))
-                .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()));
-
-        if (full) {
-            builder.addRow("Preset Generation Enabled", Boolean.toString(config.enablePresetGeneration));
-        }
-
-        builder
-                .addSection("Presets")
-                .addRow("Available Events", Integer.toString(mod.getConfigManager().calculateEventPresets()))
-                .addRow("Available Rewards", Integer.toString(mod.getConfigManager().calculateRewardPresets()));
-
-        if (full) {
-            builder
-                    .addSection("Announcements")
-                    .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))
-                    .addRow("Scope", announcementsConfig.scope)
-                    .addRow("Use Action Bar Overlay", Boolean.toString(announcementsConfig.useActionBar))
-                    .addRow("Message", announcementsConfig.spawnMessage)
-
-                    .addSection("Claim")
-                    .addRow("Life Ticks", Integer.toString(config.claim.lifeTicks))
-                    .addRow("Pickup Delay Ticks", Integer.toString(config.claim.pickupDelayTicks))
-                    .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
-
-                    .addSection("Scheduling")
-                    .addRow("Base Tick Interval", Integer.toString(config.scheduler.baseIntervalTicks))
-                    .addRow("Interval Jitter", Integer.toString(config.scheduler.intervalJitterTicks))
-                    .addRow("Max Stars Per Cycle", Integer.toString(config.scheduler.maxStarsPerCycle));
-        }
-
-        return builder.build();
-    }
-
-    private Component buildHelpTable() {
-        return new ChatTableBuilder("Falling Star Rewards Commands")
-                .addSection("General")
-                .addRow("/fallingstar help", "Show this command list")
-                .addRow("/fallingstar reload", "Reload config from disk")
-                .addSection("Status")
-                .addRow("/fallingstar status", "Show condensed status output")
-                .addRow("/fallingstar status brief", "Alias for condensed status")
-                .addRow("/fallingstar status full", "Show detailed status output")
-                .addSection("Actions")
-                .addRow("/fallingstar force", "Force one spawn cycle")
-                .addRow("/fallingstar force <preset>", "Force a spawn cycle with the specified preset")
-                .addRow("/fallingstar cleanup", "Remove tracked active drops")
-                .build();
-    }
-
     public int cleanup(CommandContext<CommandSourceStack> context) {
         int removed = FallingStarRewards.INSTANCE.cleanupActiveDrops(context.getSource().getServer());
         context.getSource().sendSystemMessage(Component.literal(
                 "Removed tracked star drops: " + removed
         ).withStyle(ChatFormatting.YELLOW));
         return removed;
-    }
-
-    public int forceOnce(CommandContext<CommandSourceStack> context) {
-        return executeForce(context, null);
-    }
-
-    public int forcePreset(CommandContext<CommandSourceStack> context) {
-        String preset = StringArgumentType.getString(context, "preset");
-        return executeForce(context, preset);
-    }
-
-    private int executeForce(CommandContext<CommandSourceStack> context, String presetId) {
-        int spawned = FallingStarRewards.INSTANCE.forceCycle(
-                context.getSource().getServer(),
-                presetId,
-                true
-        );
-
-        context.getSource().sendSystemMessage(Component.literal(
-                "Forced falling star cycle complete"
-        ).withStyle(ChatFormatting.GREEN));
-        return spawned;
     }
 }

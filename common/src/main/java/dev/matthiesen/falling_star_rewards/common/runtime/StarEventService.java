@@ -1,17 +1,18 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
-import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
+import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
+import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -28,7 +29,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.CustomModelData;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public final class StarEventService {
     private final RewardRoller rewardRoller = new RewardRoller();
     private final Map<UUID, ActiveStarDrop> activeDrops = new HashMap<>();
 
-    public void onServerTick(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig config) {
+    public void onServerTick(MinecraftServer server, LoadedPreset config) {
         if (activeDrops.isEmpty()) {
             return;
         }
@@ -107,11 +107,11 @@ public final class StarEventService {
         return removed;
     }
 
-    public int runCycle(MinecraftServer server, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
+    public int runCycle(MinecraftServer server, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig) {
         return runCycle(server, mainConfig, presetConfig, announcementsConfig, false);
     }
 
-    public int runCycle(MinecraftServer server, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
+    public int runCycle(MinecraftServer server, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
         int cappedMaxStars = Math.max(1, mainConfig.scheduler.maxStarsPerCycle);
         int maxActiveDrops = Math.max(1, mainConfig.claim.maxActiveDrops);
         if (activeDrops.size() >= maxActiveDrops) {
@@ -148,7 +148,7 @@ public final class StarEventService {
         return spawned;
     }
 
-    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, FallingStarsConfigManager.LoadedPresetConfig presetConfig, boolean bypassActivationChecks) {
+    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, LoadedPreset presetConfig, boolean bypassActivationChecks) {
         List<ServerPlayer> eligible = new ArrayList<>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (isPlayerEligible(player, presetConfig, bypassActivationChecks)) {
@@ -159,7 +159,7 @@ public final class StarEventService {
         return eligible;
     }
 
-    private boolean isPlayerEligible(ServerPlayer player, FallingStarsConfigManager.LoadedPresetConfig presetConfig, boolean bypassActivationChecks) {
+    private boolean isPlayerEligible(ServerPlayer player, LoadedPreset presetConfig, boolean bypassActivationChecks) {
         ServerLevel level = player.serverLevel();
 
         if (bypassActivationChecks) {
@@ -177,7 +177,7 @@ public final class StarEventService {
         return !presetConfig.eventConfig.activation.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
-    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, FallingStarsConfigManager.LoadedPresetConfig presetConfig, AnnouncementsConfig announcementsConfig) {
+    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig) {
         ServerLevel level = player.serverLevel();
         int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn.maxLocationAttempts);
 
@@ -225,7 +225,7 @@ public final class StarEventService {
         return false;
     }
 
-    private BlockPos pickSpawnPosition(ServerPlayer player, FallingStarsConfigManager.LoadedPresetConfig config) {
+    private BlockPos pickSpawnPosition(ServerPlayer player, LoadedPreset config) {
         ServerLevel level = player.serverLevel();
 
         int minRadius = Math.max(0, config.eventConfig.spawn.minRadius);
@@ -269,11 +269,11 @@ public final class StarEventService {
         };
     }
 
-    private boolean isGlobalScope(FallingStarsConfigManager.LoadedPresetConfig config) {
+    private boolean isGlobalScope(LoadedPreset config) {
         return "global".equalsIgnoreCase(config.eventConfig.spawn.targetScope);
     }
 
-    private void announceSpawn(ServerPlayer sourcePlayer, FallingStarsConfigManager.LoadedPresetConfig config, AnnouncementsConfig announcementsConfig) {
+    private void announceSpawn(ServerPlayer sourcePlayer, LoadedPreset config, AnnouncementsConfig announcementsConfig) {
         if (!announcementsConfig.enabled || announcementsConfig.spawnMessage == null
                 || announcementsConfig.spawnMessage.isBlank()) {
             return;
@@ -469,9 +469,6 @@ public final class StarEventService {
             case "firework" -> ParticleTypes.FIREWORK;
             default -> ParticleTypes.END_ROD;
         };
-    }
-
-    private record ActiveStarDrop(ResourceKey<Level> dimension, long startTick, long expireTick) {
     }
 }
 
