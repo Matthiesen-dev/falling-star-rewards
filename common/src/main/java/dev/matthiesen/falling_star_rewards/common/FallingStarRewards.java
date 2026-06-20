@@ -55,8 +55,8 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
     public void loadConfigs() {
         CONFIG_MANAGER.getMainConfigManager().loadConfig();
-        CONFIG_MANAGER.getEventsConfigManager().loadConfigs();
         CONFIG_MANAGER.getAnnouncementsConfigManager().loadConfig();
+        CONFIG_MANAGER.getEventsConfigManager().loadConfigs();
         CONFIG_MANAGER.getRewardsConfigManager().loadConfigs();
         CONFIG_MANAGER.getVisualsConfigManager().loadConfigs();
     }
@@ -65,16 +65,24 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return CONFIG_MANAGER.getMainConfigManager().getConfig();
     }
 
-    public FallingStarsConfigManager getConfigManager() {
-        return CONFIG_MANAGER;
-    }
-
     public AnnouncementsConfig getAnnouncementsConfig() {
         return CONFIG_MANAGER.getAnnouncementsConfigManager().getConfig();
     }
 
+    public FallingStarsConfigManager getConfigManager() {
+        return CONFIG_MANAGER;
+    }
+
     public long getNextCycleTick() {
         return RuntimeManager.getNextCycleTick();
+    }
+
+    public int getActiveDropCount() {
+        return RuntimeManager.getActiveDropCount();
+    }
+
+    public int cleanupActiveDrops(MinecraftServer server) {
+        return RuntimeManager.cleanupActiveDrops(server);
     }
 
     public int forceCycle(MinecraftServer server, String presetId, boolean bypassActivationChecks) {
@@ -89,14 +97,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
             return 0;
         }
         return RuntimeManager.runCycle(server, config, preset, getAnnouncementsConfig(), bypassActivationChecks);
-    }
-
-    public int getActiveDropCount() {
-        return RuntimeManager.getActiveDropCount();
-    }
-
-    public int cleanupActiveDrops(MinecraftServer server) {
-        return RuntimeManager.cleanupActiveDrops(server);
     }
 
     public MatthiesenLibServerEventHandler getServerEventHandler() {
