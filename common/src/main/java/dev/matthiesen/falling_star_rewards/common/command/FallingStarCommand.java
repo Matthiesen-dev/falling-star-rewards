@@ -18,6 +18,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
@@ -40,6 +41,7 @@ import java.util.function.Function;
  *     /fallingstar preset [events|visuals|rewards] create [name]
  *
  *     /fallingstar preset [events|visuals|rewards] delete [name]
+ *     /fallingstar confirm-delete [event_id]
  *
  *     Planned:
  *
@@ -48,8 +50,6 @@ import java.util.function.Function;
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
- *
- *     /fallingstar confirm-delete [event_id]
  *</pre>
  */
 public final class FallingStarCommand extends AbstractCommand {
@@ -229,7 +229,7 @@ public final class FallingStarCommand extends AbstractCommand {
                         )
                         .then("confirm-delete", confirmDelete -> confirmDelete
                                 .argument("event_id", StringArgumentType.string(),
-                                        eventId -> eventId.executes(this::help))
+                                        eventId -> eventId.executes(this::confirmDelete))
                         )
                         .build()
         );
@@ -403,6 +403,40 @@ public final class FallingStarCommand extends AbstractCommand {
         return 1;
     }
 
+    private int confirmDelete(CommandContext<CommandSourceStack> context) {
+        String key = StringArgumentType.getString(context, "event_id");
+
+        if (!DELETION_REQUESTS.containsKey(key)) {
+            context.getSource().sendFailure(Component.literal("Invalid or expired deletion key: " + key).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        PresetDeletionRequest request = DELETION_REQUESTS.remove(key);
+
+        // Get the appropriate manager based on the preset type
+        ConfigFolderManager<?> manager = switch (request.presetType()) {
+            case EVENT -> FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
+            case REWARDS -> FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
+            case VISUALS -> FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager();
+        };
+
+        // Delete the preset
+        boolean deleted = manager.deleteConfig(request.presetName());
+
+        String presetType = request.presetType().name().toLowerCase(Locale.ROOT);
+        if (deleted) {
+            context.getSource().sendSystemMessage(
+                    Component.literal("The " + presetType + " preset '" + request.presetName() + "' has been deleted.").withStyle(ChatFormatting.GREEN)
+            );
+            return 1;
+        } else {
+            context.getSource().sendFailure(
+                    Component.literal("Failed to delete the " + presetType + " preset '" + request.presetName() + "'.").withStyle(ChatFormatting.RED)
+            );
+            return 0;
+        }
+    }
+
     @Override
     public int action(CommandContext<CommandSourceStack> context) {
         return 0;
@@ -521,33 +555,11 @@ public final class FallingStarCommand extends AbstractCommand {
         return spawned;
     }
 
-    public static class PresetDeletionRequest {
-        private final PRESET_TYPES presetType;
-        private final String presetName;
-        private final long requestTime;
-
-        public PresetDeletionRequest(PRESET_TYPES presetType, String presetName) {
-            this.presetType = presetType;
-            this.presetName = presetName;
-            this.requestTime = System.currentTimeMillis();
-        }
-
-        public PRESET_TYPES getPresetType() {
-            return presetType;
-        }
-
-        public String getPresetName() {
-            return presetName;
-        }
-
-        public long getRequestTime() {
-            return requestTime;
-        }
-
+    public record PresetDeletionRequest(PRESET_TYPES presetType, String presetName) {
         public enum PRESET_TYPES {
-            EVENT,
-            REWARDS,
-            VISUALS;
+                EVENT,
+                REWARDS,
+                VISUALS
+            }
         }
-    }
 }
