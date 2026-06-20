@@ -39,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
  *     /fallingstar preset [events|visuals|rewards] create [name]
  *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar preset [events|visuals|rewards] info [name]
- *     /fallingstar preset events set [reward|visuals] [name] [preset name]
+ *     /fallingstar preset events set [rewards|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name] [weight] [min] [max]
  *     /fallingstar preset rewards remove [name] [item_id]
