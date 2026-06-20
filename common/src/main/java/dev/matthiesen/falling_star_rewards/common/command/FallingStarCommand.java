@@ -39,12 +39,11 @@ import java.util.function.Function;
  *     /fallingstar status full
  *     /fallingstar force
  *     /fallingstar force [preset]
+ *     /fallingstar confirm-delete [event_id]
  *     /fallingstar preset [events|visuals] [disable|enable] [name]
  *     /fallingstar preset [events|visuals|rewards] list
  *     /fallingstar preset [events|visuals|rewards] create [name]
- *
  *     /fallingstar preset [events|visuals|rewards] delete [name]
- *     /fallingstar confirm-delete [event_id]
  *
  *     Planned:
  *
