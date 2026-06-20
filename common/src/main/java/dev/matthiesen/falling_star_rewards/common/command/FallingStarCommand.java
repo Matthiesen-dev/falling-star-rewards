@@ -59,10 +59,11 @@ import java.util.function.Function;
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name]
+ *     /fallingstar preset rewards remove [name] [item_id]
  *
  *     Planned:
  *
- *     /fallingstar preset rewards remove [name] [item_id]
+ *     N/A
  *</pre>
  */
 public final class FallingStarCommand extends AbstractCommand {
