@@ -211,7 +211,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 .then(Commands.argument("name", StringArgumentType.string())
                                                         .suggests(this::getRewardsPresetLists)
                                                         .then(Commands.argument("item_id", StringArgumentType.string())
-                                                                .executes(this::help) // TODO
+                                                                .executes(this::presetRewardsRemove)
                                                         )
                                                 )
                                         )
@@ -782,8 +782,7 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("/fallingstar preset events create <name>", "Create an event preset")
                 .addRow("/fallingstar preset events delete <name>", "Delete an event preset")
                 .addRow("/fallingstar preset events info <name>", "Show event preset details")
-                .addRow("/fallingstar preset events set rewards <name> <preset_id>", "Set the rewards preset used by an event preset")
-                .addRow("/fallingstar preset events set visuals <name> <preset_id>", "Set the visuals preset used by an event preset")
+                .addRow("/fallingstar preset events set {rewards|visuals} <name> <preset_id>", "Sets the rewards or visuals preset used by an event preset")
                 .build();
             case 3 -> new ChatTableBuilder("Falling Star Rewards Commands (Page 3/" + HELP_PAGE_COUNT + ")")
                 .addSection("Reward Presets")
@@ -791,9 +790,7 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("/fallingstar preset rewards create <name>", "Create a reward preset")
                 .addRow("/fallingstar preset rewards delete <name>", "Delete a reward preset")
                 .addRow("/fallingstar preset rewards info <name>", "Show reward preset details")
-                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max>", "Add a reward entry")
-                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max> <custom_model_data>", "Add a reward entry with custom model data")
-                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max> <custom_model_data> <custom_data>", "Add a reward entry with custom model data and custom data")
+                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max> (custom_model_data) (custom_data)", "Add a reward entry with optional custom model data and custom data")
                 .addRow("/fallingstar preset rewards add-held-item <name>", "Add the held item as a reward entry")
                 .addRow("/fallingstar preset rewards remove <name> <item_id>", "Remove a reward entry from a preset")
                 .build();
@@ -901,6 +898,58 @@ public final class FallingStarCommand extends AbstractCommand {
                         .addRow("Max Count", Integer.toString(entry.maxCount))
                         .addRow("Custom Model Data", entry.customModelData == null ? "None" : entry.customModelData.toString())
                         .addRow("Custom Data", entry.customData == null || entry.customData.isBlank() ? "None" : entry.customData)
+                        .build()
+        );
+        return 1;
+    }
+
+    private int presetRewardsRemove(CommandContext<CommandSourceStack> context) {
+        String presetName = StringArgumentType.getString(context, "name");
+        String itemId = StringArgumentType.getString(context, "item_id");
+        ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
+
+        if (!manager.hasConfig(presetName)) {
+            context.getSource().sendFailure(Component.literal("Reward preset not found: " + presetName).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        RewardsPresetConfig config = manager.getConfig(presetName);
+        if (config.entries == null || config.entries.length == 0) {
+            context.getSource().sendFailure(Component.literal("Reward preset '" + presetName + "' has no entries to remove.").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        int removedCount = 0;
+        RewardsPresetConfig.RewardEntry[] filtered = new RewardsPresetConfig.RewardEntry[config.entries.length];
+        int keptCount = 0;
+        for (RewardsPresetConfig.RewardEntry entry : config.entries) {
+            boolean matches = entry != null && itemId.equals(entry.id);
+            if (matches) {
+                removedCount++;
+                continue;
+            }
+
+            filtered[keptCount++] = entry;
+        }
+
+        filtered = Arrays.copyOf(filtered, keptCount);
+
+        if (removedCount == 0) {
+            context.getSource().sendFailure(Component.literal("No reward entry with item id '" + itemId + "' was found in preset '" + presetName + "'.").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        config.entries = filtered;
+        updateConfigAndSave(manager, presetName, config);
+
+        context.getSource().sendSystemMessage(
+                new ChatTableBuilder("Reward Entry Removed")
+                        .addSection("Preset")
+                        .addRow("Name", presetName)
+                        .addSection("Removal")
+                        .addRow("Item Id", itemId)
+                        .addRow("Entries Removed", Integer.toString(removedCount))
+                        .addRow("Remaining Entries", Integer.toString(config.entries.length))
                         .build()
         );
         return 1;
