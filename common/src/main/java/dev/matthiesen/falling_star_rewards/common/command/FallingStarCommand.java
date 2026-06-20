@@ -58,7 +58,7 @@ import java.util.function.Function;
  *     /fallingstar preset [events|visuals|rewards] info [name]
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
- *     /fallingstar preset rewards add-held-item [name]
+ *     /fallingstar preset rewards add-held-item [name] [weight] [min] [max]
  *     /fallingstar preset rewards remove [name] [item_id]
  *
  *     Planned:
@@ -205,7 +205,13 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name
                                                             .suggests(this::getRewardsPresetLists)
-                                                            .executes(this::presetRewardsAddHeldItem)
+                                                            .then(Commands.argument("weight", IntegerArgumentType.integer())
+                                                                    .then(Commands.argument("min", IntegerArgumentType.integer())
+                                                                            .then(Commands.argument("max", IntegerArgumentType.integer())
+                                                                                    .executes(this::presetRewardsAddHeldItem)
+                                                                            )
+                                                                    )
+                                                            )
                                                 )
                                         )
                                         .then("remove", remove -> remove
@@ -792,7 +798,7 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("/fallingstar preset rewards delete <name>", "Delete a reward preset")
                 .addRow("/fallingstar preset rewards info <name>", "Show reward preset details")
                 .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max> (custom_model_data) (custom_data)", "Add a reward entry with optional custom model data and custom data")
-                .addRow("/fallingstar preset rewards add-held-item <name>", "Add the held item as a reward entry")
+                .addRow("/fallingstar preset rewards add-held-item <name> <weight> <min> <max>", "Add the held item as a reward entry")
                 .addRow("/fallingstar preset rewards remove <name> <item_id>", "Remove a reward entry from a preset")
                 .build();
             case 4 -> new ChatTableBuilder("Falling Star Rewards Commands (Page 4/" + HELP_PAGE_COUNT + ")")
@@ -861,6 +867,9 @@ public final class FallingStarCommand extends AbstractCommand {
 
     private int presetRewardsAddHeldItem(CommandContext<CommandSourceStack> context) {
         String presetName = StringArgumentType.getString(context, "name");
+        int weight = IntegerArgumentType.getInteger(context, "weight");
+        int min = IntegerArgumentType.getInteger(context, "min");
+        int max = IntegerArgumentType.getInteger(context, "max");
         ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
 
         if (!manager.hasConfig(presetName)) {
@@ -882,7 +891,7 @@ public final class FallingStarCommand extends AbstractCommand {
             return 0;
         }
 
-        RewardsPresetConfig.RewardEntry entry = buildRewardEntryFromHeldItem(stack);
+        RewardsPresetConfig.RewardEntry entry = buildRewardEntryFromHeldItem(stack, weight, min, max);
         RewardsPresetConfig config = manager.getConfig(presetName);
         config.entries = config.entries == null ? new RewardsPresetConfig.RewardEntry[] { entry } : Arrays.copyOf(config.entries, config.entries.length + 1);
         config.entries[config.entries.length - 1] = entry;
@@ -956,7 +965,7 @@ public final class FallingStarCommand extends AbstractCommand {
         return 1;
     }
 
-    private RewardsPresetConfig.RewardEntry buildRewardEntryFromHeldItem(ItemStack stack) {
+    private RewardsPresetConfig.RewardEntry buildRewardEntryFromHeldItem(ItemStack stack, int weight, int min, int max) {
         String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
         Integer customModelData = null;
         if (stack.has(DataComponents.CUSTOM_MODEL_DATA)) {
@@ -975,7 +984,7 @@ public final class FallingStarCommand extends AbstractCommand {
             }
         }
 
-        return new RewardsPresetConfig.RewardEntry(itemId, 1, stack.getCount(), stack.getCount(), customModelData, customData);
+        return new RewardsPresetConfig.RewardEntry(itemId, weight, min, max, customModelData, customData);
     }
 
     public int cleanup(CommandContext<CommandSourceStack> context) {
