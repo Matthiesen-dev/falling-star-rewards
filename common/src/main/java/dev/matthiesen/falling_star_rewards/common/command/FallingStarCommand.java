@@ -119,7 +119,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name -> name
                                                         .suggests(this::getEventsPresetLists)
-                                                        .executes(this::help)
+                                                        .executes(this::help) // TODO
                                                 )
                                         )
                                         .then("set", set -> set
@@ -128,7 +128,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                 .suggests(this::getRewardsPresetLists)
                                                                 .then(Commands.argument("preset_id", StringArgumentType.string())
                                                                         .suggests(this::getRewardsPresetLists)
-                                                                        .executes(this::help)
+                                                                        .executes(this::help) // TODO
                                                                 )
                                                         )
                                                 )
@@ -137,7 +137,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                 .suggests(this::getVisualsPresetLists)
                                                                 .then(Commands.argument("preset_id", StringArgumentType.string())
                                                                         .suggests(this::getVisualsPresetLists)
-                                                                        .executes(this::help)
+                                                                        .executes(this::help) // TODO
                                                                 )
                                                         )
                                                 )
@@ -161,7 +161,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name -> name
                                                         .suggests(this::getRewardsPresetLists)
-                                                        .executes(this::help)
+                                                        .executes(this::help) // TODO
                                                 )
                                         )
                                         .then("add", add -> add
@@ -172,11 +172,11 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                         .then(Commands.argument("weight", IntegerArgumentType.integer())
                                                                                 .then(Commands.argument("min", IntegerArgumentType.integer())
                                                                                         .then(Commands.argument("max", IntegerArgumentType.integer())
-                                                                                                .executes(this::help)
+                                                                                                .executes(this::help) // TODO
                                                                                                 .then(Commands.argument("custom_model_data", IntegerArgumentType.integer())
-                                                                                                        .executes(this::help)
+                                                                                                        .executes(this::help) // TODO
                                                                                                         .then(Commands.argument("custom_data", StringArgumentType.string())
-                                                                                                                .executes(this::help)
+                                                                                                                .executes(this::help) // TODO
                                                                                                         )
                                                                                                 )
                                                                                         )
@@ -189,14 +189,14 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name
                                                             .suggests(this::getRewardsPresetLists)
-                                                            .executes(this::help)
+                                                            .executes(this::help) // TODO
                                                 )
                                         )
                                         .then("remove", remove -> remove
                                                 .then(Commands.argument("name", StringArgumentType.string())
                                                         .suggests(this::getRewardsPresetLists)
                                                         .then(Commands.argument("item_id", StringArgumentType.string())
-                                                                .executes(this::help)
+                                                                .executes(this::help) // TODO
                                                         )
                                                 )
                                         )
@@ -231,7 +231,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name -> name
                                                         .suggests(this::getVisualsPresetLists)
-                                                        .executes(this::help)
+                                                        .executes(this::help) // TODO
                                                 )
                                         )
                                 )
