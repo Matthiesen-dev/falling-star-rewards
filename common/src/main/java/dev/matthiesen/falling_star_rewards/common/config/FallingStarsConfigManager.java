@@ -15,6 +15,7 @@ public final class FallingStarsConfigManager {
     private final FallingStarRewards MOD_INSTANCE;
     private ConfigManager<MainConfig> MAIN_CONFIG;
     private ConfigManager<AnnouncementsConfig> ANNOUNCEMENTS_CONFIG;
+    private ConfigManager<PermissionsConfig> PERMISSIONS_CONFIG;
     private ConfigFolderManager<EventPresetConfig> EVENTS_CONFIG;
     private ConfigFolderManager<RewardsPresetConfig> REWARDS_CONFIG;
     private ConfigFolderManager<VisualsPresetConfig> VISUALS_CONFIG;
@@ -26,6 +27,7 @@ public final class FallingStarsConfigManager {
     public void init() {
         MAIN_CONFIG = MOD_INSTANCE.createConfigManager(MainConfig.class, "config");
         ANNOUNCEMENTS_CONFIG = MOD_INSTANCE.createConfigManager(AnnouncementsConfig.class, "announcements");
+        PERMISSIONS_CONFIG = MOD_INSTANCE.createConfigManager(PermissionsConfig.class, "permissions");
         EVENTS_CONFIG = MOD_INSTANCE.createConfigFolderManager(EventPresetConfig.class, "events");
         REWARDS_CONFIG = MOD_INSTANCE.createConfigFolderManager(RewardsPresetConfig.class, "rewards");
         VISUALS_CONFIG = MOD_INSTANCE.createConfigFolderManager(VisualsPresetConfig.class, "visuals");
@@ -33,6 +35,7 @@ public final class FallingStarsConfigManager {
         // Load the main config to verify if we need to generate presets
         var config = MAIN_CONFIG.loadConfig();
         ANNOUNCEMENTS_CONFIG.loadConfig();
+        PERMISSIONS_CONFIG.loadConfig();
         EVENTS_CONFIG.loadConfigs();
         REWARDS_CONFIG.loadConfigs();
         VISUALS_CONFIG.loadConfigs();
@@ -53,6 +56,10 @@ public final class FallingStarsConfigManager {
 
     public ConfigManager<AnnouncementsConfig> getAnnouncementsConfigManager() {
         return ANNOUNCEMENTS_CONFIG;
+    }
+
+    public ConfigManager<PermissionsConfig> getPermissionsConfigManager() {
+        return PERMISSIONS_CONFIG;
     }
 
     public ConfigFolderManager<EventPresetConfig> getEventsConfigManager() {

@@ -97,7 +97,9 @@ public final class FallingStarCommand extends AbstractCommand {
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
         dispatcher.register(
-                new CommandBuilder("fallingstar", src -> src.hasPermission(4))
+                new CommandBuilder("fallingstar", FallingStarRewards.getPermissionPredicate(
+                        FallingStarRewards.getPermissions().COMMAND_ROOT
+                ))
                         .then(getReloadSubCommand())
                         .then(getCleanupSubCommand())
                         .then(HelpCommand.getHelpSubCommand())
@@ -111,11 +113,17 @@ public final class FallingStarCommand extends AbstractCommand {
 
     public CommandBuilder getReloadSubCommand() {
         return new CommandBuilder("reload")
+                .requires(FallingStarRewards.getPermissionPredicate(
+                        FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_RELOAD
+                ))
                 .executes(this::reload);
     }
 
     public CommandBuilder getCleanupSubCommand() {
         return new CommandBuilder("cleanup")
+                .requires(FallingStarRewards.getPermissionPredicate(
+                        FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_CLEANUP
+                ))
                 .executes(this::cleanup);
     }
 
