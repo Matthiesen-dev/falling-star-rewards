@@ -1,9 +1,11 @@
 package dev.matthiesen.falling_star_rewards.common.command;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
@@ -72,197 +74,229 @@ public final class FallingStarCommand extends AbstractCommand {
     private static final long DELETION_REQUEST_TTL_MS = 5L * 60L * 1000L;
     private static final int HELP_PAGE_COUNT = 4;
 
+    private CommandBuilder getHelpSubCommand() {
+        return new CommandBuilder("help")
+                .executes(this::help)
+                .argument("page", IntegerArgumentType.integer(1, HELP_PAGE_COUNT), page -> page
+                        .executes(this::helpPage)
+                );
+    }
+
+    private CommandBuilder getReloadSubCommand() {
+        return new CommandBuilder("reload")
+                .executes(this::reload);
+    }
+
+    private CommandBuilder getCleanupSubCommand() {
+        return new CommandBuilder("cleanup")
+                .executes(this::cleanup);
+    }
+
+    private CommandBuilder getStatusSubCommand() {
+        return new CommandBuilder("status")
+                .executes(this::status)
+                .then("brief", brief -> brief
+                        .executes(this::status)
+                )
+                .then("full", full -> full
+                        .executes(this::statusFull)
+                );
+    }
+
+    private CommandBuilder getForceSubCommand() {
+        return new CommandBuilder("force")
+                .executes(this::forceOnce)
+                .argument("preset", StringArgumentType.string(), preset -> preset
+                        .suggests(this::getEventsPresetLists)
+                        .executes(this::forcePreset)
+                );
+    }
+
+    private CommandBuilder getConfirmDeleteSubCommand() {
+        return new CommandBuilder("confirm-delete")
+                .argument("event_id", StringArgumentType.string(), eventId -> eventId
+                        .executes(this::confirmDelete)
+                );
+    }
+
+    private CommandBuilder addEnableDisableCommands(
+            CommandBuilder cmdBuilder,
+            SuggestionProvider<CommandSourceStack> suggestionsFuture,
+            Command<CommandSourceStack> enableCommand,
+            Command<CommandSourceStack> disableCommand
+    ) {
+        return cmdBuilder.then("enable", enable -> enable
+                .argument("name", StringArgumentType.string(), name -> name
+                        .suggests(suggestionsFuture)
+                        .executes(enableCommand)
+                )
+        ).then("disable", disable -> disable
+                .argument("name", StringArgumentType.string(), name -> name
+                        .suggests(suggestionsFuture)
+                        .executes(disableCommand)
+                )
+        );
+    }
+
+    private CommandBuilder addGenericCommands(
+            CommandBuilder cmdBuilder,
+            SuggestionProvider<CommandSourceStack> suggestionsFuture,
+            Command<CommandSourceStack> listCommand,
+            Command<CommandSourceStack> createCommand,
+            Command<CommandSourceStack> deleteCommand,
+            Command<CommandSourceStack> infoCommand
+    ) {
+        return cmdBuilder
+                .then("list", list -> list.executes(listCommand))
+                .then("create", create -> create
+                        .argument("name", StringArgumentType.string(), name -> name
+                                .executes(createCommand)
+                        )
+                )
+                .then("delete", delete -> delete
+                        .argument("name", StringArgumentType.string(), name -> name
+                                .suggests(suggestionsFuture)
+                                .executes(deleteCommand)
+                        )
+                )
+                .then("info", info -> info
+                        .argument("name", StringArgumentType.string(), name -> name
+                                .suggests(suggestionsFuture)
+                                .executes(infoCommand)
+                        )
+                );
+    }
+
+    private CommandBuilder getPresetEventsSubCommand() {
+        var builder = new CommandBuilder("events");
+        builder = addEnableDisableCommands(
+                builder,
+                this::getEventsPresetLists,
+                this::presetEventEnable,
+                this::presetEventDisable
+        );
+        builder = addGenericCommands(
+                builder,
+                this::getEventsPresetLists,
+                this::presetEventsList,
+                this::presetEventCreate,
+                this::presetEventsDelete,
+                this::presetEventsInfo
+        );
+        return builder
+                .then("set", set -> set
+                        .then("rewards", rewards -> rewards
+                                .then(Commands.argument("name", StringArgumentType.string())
+                                        .suggests(this::getEventsPresetLists)
+                                        .then(Commands.argument("preset_id", StringArgumentType.string())
+                                                .suggests(this::getRewardsPresetLists)
+                                                .executes(this::presetEventSetRewards)
+                                        )
+                                )
+                        )
+                        .then("visuals", rewards -> rewards
+                                .then(Commands.argument("name", StringArgumentType.string())
+                                        .suggests(this::getEventsPresetLists)
+                                        .then(Commands.argument("preset_id", StringArgumentType.string())
+                                                .suggests(this::getVisualsPresetLists)
+                                                .executes(this::presetEventSetVisuals)
+                                        )
+                                )
+                        )
+                );
+    }
+
+    private CommandBuilder getPresetRewardsSubCommand() {
+        var builder = new CommandBuilder("rewards");
+        builder = addGenericCommands(
+                builder,
+                this::getRewardsPresetLists,
+                this::presetRewardsList,
+                this::presetRewardsCreate,
+                this::presetRewardsDelete,
+                this::presetRewardsInfo
+        );
+        return builder
+                .then("add", add -> add
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .suggests(this::getRewardsPresetLists)
+                                .then(
+                                        Commands.argument("item_id", StringArgumentType.string())
+                                                .then(Commands.argument("weight", IntegerArgumentType.integer())
+                                                        .then(Commands.argument("min", IntegerArgumentType.integer())
+                                                                .then(Commands.argument("max", IntegerArgumentType.integer())
+                                                                        .executes(this::presetRewardsAdd)
+                                                                        .then(Commands.argument("custom_model_data", IntegerArgumentType.integer())
+                                                                                .executes(this::presetRewardsAddWithCustomModelData)
+                                                                                .then(Commands.argument("custom_data", StringArgumentType.string())
+                                                                                        .executes(this::presetRewardsAddWithCustomModelDataAndCustomData)
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                )
+                        )
+                )
+                .then("add-held-item", addHeldItem -> addHeldItem
+                        .argument("name", StringArgumentType.string(),
+                                name -> name
+                                        .suggests(this::getRewardsPresetLists)
+                                        .then(Commands.argument("weight", IntegerArgumentType.integer())
+                                                .then(Commands.argument("min", IntegerArgumentType.integer())
+                                                        .then(Commands.argument("max", IntegerArgumentType.integer())
+                                                                .executes(this::presetRewardsAddHeldItem)
+                                                        )
+                                                )
+                                        )
+                        )
+                )
+                .then("remove", remove -> remove
+                        .then(Commands.argument("name", StringArgumentType.string())
+                                .suggests(this::getRewardsPresetLists)
+                                .then(Commands.argument("item_id", StringArgumentType.string())
+                                        .executes(this::presetRewardsRemove)
+                                )
+                        )
+                );
+    }
+
+    private CommandBuilder getPresetVisualsSubCommand() {
+        var builder = new CommandBuilder("visuals");
+        builder = addEnableDisableCommands(
+                builder,
+                this::getVisualsPresetLists,
+                this::presetVisualsEnable,
+                this::presetVisualsDisable
+        );
+        return addGenericCommands(
+                builder,
+                this::getVisualsPresetLists,
+                this::presetVisualsList,
+                this::presetVisualsCreate,
+                this::presetVisualsDelete,
+                this::presetVisualsInfo
+        );
+    }
+
+    private CommandBuilder getPresetSubCommand() {
+        return new CommandBuilder("preset")
+                .then(getPresetEventsSubCommand())
+                .then(getPresetRewardsSubCommand())
+                .then(getPresetVisualsSubCommand());
+    }
+
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
         dispatcher.register(
                 new CommandBuilder("fallingstar", src -> src.hasPermission(4))
-                        .then("help", help -> help
-                                .executes(this::help)
-                                .argument("page", IntegerArgumentType.integer(1, HELP_PAGE_COUNT), page -> page
-                                        .executes(this::helpPage)
-                                )
-                        )
-                        .then("reload", reload -> reload
-                                .executes(this::reload)
-                        )
-                        .then("cleanup", cleanup -> cleanup
-                                .executes(this::cleanup)
-                        )
-                        .then("status", status -> status
-                                .executes(this::status)
-                                .then("brief", brief -> brief
-                                        .executes(this::status)
-                                )
-                                .then("full", full -> full
-                                        .executes(this::statusFull)
-                                )
-                        )
-                        .then("force", force -> force
-                                .executes(this::forceOnce)
-                                .argument("preset", StringArgumentType.string(), preset -> preset
-                                        .suggests(this::getEventsPresetLists)
-                                        .executes(this::forcePreset)
-                                )
-                        )
-                        .then("preset", preset -> preset
-                                .then("events", events -> events
-                                        .then("enable", enable -> enable
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getEventsPresetLists)
-                                                        .executes(this::presetEventEnable)
-                                                )
-                                        )
-                                        .then("disable", enable -> enable
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getEventsPresetLists)
-                                                        .executes(this::presetEventDisable)
-                                                )
-                                        )
-                                        .then("list", list -> list
-                                                .executes(this::presetEventsList)
-                                        )
-                                        .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .executes(this::presetEventCreate)
-                                                )
-                                        )
-                                        .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getEventsPresetLists)
-                                                        .executes(this::presetEventsDelete)
-                                                )
-                                        )
-                                        .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getEventsPresetLists)
-                                                        .executes(this::presetEventsInfo)
-                                                )
-                                        )
-                                        .then("set", set -> set
-                                                .then("rewards", rewards -> rewards
-                                                        .then(Commands.argument("name", StringArgumentType.string())
-                                                                .suggests(this::getEventsPresetLists)
-                                                                .then(Commands.argument("preset_id", StringArgumentType.string())
-                                                                        .suggests(this::getRewardsPresetLists)
-                                                                        .executes(this::presetEventSetRewards)
-                                                                )
-                                                        )
-                                                )
-                                                .then("visuals", rewards -> rewards
-                                                        .then(Commands.argument("name", StringArgumentType.string())
-                                                                .suggests(this::getEventsPresetLists)
-                                                                .then(Commands.argument("preset_id", StringArgumentType.string())
-                                                                        .suggests(this::getVisualsPresetLists)
-                                                                        .executes(this::presetEventSetVisuals)
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                )
-                                .then("rewards", rewards -> rewards
-                                        .then("list", list -> list
-                                                .executes(this::presetRewardsList)
-                                        )
-                                        .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .executes(this::presetRewardsCreate)
-                                                )
-                                        )
-                                        .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getRewardsPresetLists)
-                                                        .executes(this::presetRewardsDelete)
-                                                )
-                                        )
-                                        .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getRewardsPresetLists)
-                                                        .executes(this::presetRewardsInfo)
-                                                )
-                                        )
-                                        .then("add", add -> add
-                                                .then(Commands.argument("name", StringArgumentType.string())
-                                                        .suggests(this::getRewardsPresetLists)
-                                                        .then(
-                                                                Commands.argument("item_id", StringArgumentType.string())
-                                                                        .then(Commands.argument("weight", IntegerArgumentType.integer())
-                                                                                .then(Commands.argument("min", IntegerArgumentType.integer())
-                                                                                        .then(Commands.argument("max", IntegerArgumentType.integer())
-                                                                                                .executes(this::presetRewardsAdd)
-                                                                                                .then(Commands.argument("custom_model_data", IntegerArgumentType.integer())
-                                                                                                        .executes(this::presetRewardsAddWithCustomModelData)
-                                                                                                        .then(Commands.argument("custom_data", StringArgumentType.string())
-                                                                                                                .executes(this::presetRewardsAddWithCustomModelDataAndCustomData)
-                                                                                                        )
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                        )
-                                                )
-                                        )
-                                        .then("add-held-item", addHeldItem -> addHeldItem
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name
-                                                            .suggests(this::getRewardsPresetLists)
-                                                            .then(Commands.argument("weight", IntegerArgumentType.integer())
-                                                                    .then(Commands.argument("min", IntegerArgumentType.integer())
-                                                                            .then(Commands.argument("max", IntegerArgumentType.integer())
-                                                                                    .executes(this::presetRewardsAddHeldItem)
-                                                                            )
-                                                                    )
-                                                            )
-                                                )
-                                        )
-                                        .then("remove", remove -> remove
-                                                .then(Commands.argument("name", StringArgumentType.string())
-                                                        .suggests(this::getRewardsPresetLists)
-                                                        .then(Commands.argument("item_id", StringArgumentType.string())
-                                                                .executes(this::presetRewardsRemove)
-                                                        )
-                                                )
-                                        )
-                                )
-                                .then("visuals", visuals -> visuals
-                                        .then("enable", enable -> enable
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getVisualsPresetLists)
-                                                        .executes(this::presetVisualsEnable)
-                                                )
-                                        )
-                                        .then("disable", enable -> enable
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getVisualsPresetLists)
-                                                        .executes(this::presetVisualsDisable)
-                                                )
-                                        )
-                                        .then("list", list -> list
-                                                .executes(this::presetVisualsList)
-                                        )
-                                        .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .executes(this::presetVisualsCreate)
-                                                )
-                                        )
-                                        .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getVisualsPresetLists)
-                                                        .executes(this::presetVisualsDelete)
-                                                )
-                                        )
-                                        .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name -> name
-                                                        .suggests(this::getVisualsPresetLists)
-                                                        .executes(this::presetVisualsInfo)
-                                                )
-                                        )
-                                )
-                        )
-                        .then("confirm-delete", confirmDelete -> confirmDelete
-                                .argument("event_id", StringArgumentType.string(), eventId -> eventId
-                                        .executes(this::confirmDelete)
-                                )
-                        )
+                        .then(getHelpSubCommand())
+                        .then(getReloadSubCommand())
+                        .then(getCleanupSubCommand())
+                        .then(getStatusSubCommand())
+                        .then(getForceSubCommand())
+                        .then(getConfirmDeleteSubCommand())
+                        .then(getPresetSubCommand())
                         .build()
         );
     }
