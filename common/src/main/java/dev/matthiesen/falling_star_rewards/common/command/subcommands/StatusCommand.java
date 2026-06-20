@@ -9,7 +9,9 @@ import net.minecraft.network.chat.Component;
 
 public final class StatusCommand {
     public static CommandBuilder getStatusSubCommand() {
-        return new CommandBuilder("status")
+        return new CommandBuilder("status", FallingStarRewards.getPermissionPredicate(
+                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_STATUS
+        ))
                 .executes(StatusCommand::status)
                 .then("brief", brief -> brief
                         .executes(StatusCommand::status)
