@@ -6,8 +6,7 @@ import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
-import dev.matthiesen.falling_star_rewards.common.runtime.StarEventOrchestrator;
-import dev.matthiesen.falling_star_rewards.common.runtime.StarEventService;
+import dev.matthiesen.falling_star_rewards.common.runtime.RuntimeManager;
 import dev.matthiesen.libs.faststats.Token;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
@@ -16,16 +15,16 @@ public final class FallingStarRewards extends AbstractCommonMod {
     public static final String MOD_ID = "falling_star_rewards";
     private static final String MOD_NAME = "Falling Star Rewards";
     private static @Token final String METRICS_TOKEN = "3b8d656e1efa1d6eaa2ec90c7ad832bd";
+    public static final FallingStarRewards INSTANCE;
+    public static final FallingStarsConfigManager CONFIG_MANAGER;
 
-    public static final FallingStarRewards INSTANCE = new FallingStarRewards();
-    public static FallingStarsConfigManager CONFIG_MANAGER;
-
-    private final StarEventOrchestrator orchestrator = new StarEventOrchestrator();
-    private final StarEventService starEventService = new StarEventService();
+    static {
+        INSTANCE = new FallingStarRewards();
+        CONFIG_MANAGER = new FallingStarsConfigManager(INSTANCE);
+    }
 
     public FallingStarRewards() {
         super(MOD_ID, MOD_NAME);
-        CONFIG_MANAGER = new FallingStarsConfigManager(this);
     }
 
     @Override
@@ -75,7 +74,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
     }
 
     public long getNextCycleTick() {
-        return orchestrator.getNextCycleTick();
+        return RuntimeManager.getNextCycleTick();
     }
 
     public int forceCycle(MinecraftServer server, String presetId, boolean bypassActivationChecks) {
@@ -89,15 +88,15 @@ public final class FallingStarRewards extends AbstractCommonMod {
             createWarnLog("No event presets available to start a cycle");
             return 0;
         }
-        return starEventService.runCycle(server, config, preset, getAnnouncementsConfig(), bypassActivationChecks);
+        return RuntimeManager.runCycle(server, config, preset, getAnnouncementsConfig(), bypassActivationChecks);
     }
 
     public int getActiveDropCount() {
-        return starEventService.getActiveDropCount();
+        return RuntimeManager.getActiveDropCount();
     }
 
     public int cleanupActiveDrops(MinecraftServer server) {
-        return starEventService.cleanupActiveDrops(server);
+        return RuntimeManager.cleanupActiveDrops(server);
     }
 
     public MatthiesenLibServerEventHandler getServerEventHandler() {
@@ -112,19 +111,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
                 MainConfig config = getMainConfig();
                 if (!config.enabled) return;
                 var preset = CONFIG_MANAGER.loadRandomEventPreset();
-                if (preset == null) {
-                    createWarnLog("No event presets available to start a cycle");
-                    return;
-                }
-                AnnouncementsConfig announcementsConfig = getAnnouncementsConfig();
-                starEventService.onServerTick(server, preset);
-                var gameTick = server.getTickCount();
-                if (orchestrator.shouldStartCycle(gameTick, config)) {
-                    int spawned = starEventService.runCycle(server, config, preset, announcementsConfig);
-                    if (spawned > 0) {
-                        createInfoLog("Starting star cycle at tick " + gameTick + " (spawned=" + spawned + ")");
-                    }
-                }
+                RuntimeManager.tick(server, config, getAnnouncementsConfig(), preset);
             }
 
             @Override
