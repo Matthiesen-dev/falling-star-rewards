@@ -12,6 +12,7 @@ import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -44,10 +45,10 @@ import java.util.function.Function;
  *     /fallingstar preset [events|visuals|rewards] list
  *     /fallingstar preset [events|visuals|rewards] create [name]
  *     /fallingstar preset [events|visuals|rewards] delete [name]
+ *     /fallingstar preset [events|visuals|rewards] info [name]
  *
  *     Planned:
  *
- *     /fallingstar preset [events|visuals|rewards] info [name]
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name]
@@ -57,6 +58,7 @@ import java.util.function.Function;
 public final class FallingStarCommand extends AbstractCommand {
     public static final FallingStarCommand CMD = new FallingStarCommand();
     private static final Map<String, PresetDeletionRequest> DELETION_REQUESTS = new LinkedHashMap<>();
+    private static final long DELETION_REQUEST_TTL_MS = 5L * 60L * 1000L;
 
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
@@ -118,7 +120,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name -> name
                                                         .suggests(this::getEventsPresetLists)
-                                                        .executes(this::help) // TODO
+                                                        .executes(this::presetEventsInfo)
                                                 )
                                         )
                                         .then("set", set -> set
@@ -160,7 +162,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name -> name
                                                         .suggests(this::getRewardsPresetLists)
-                                                        .executes(this::help) // TODO
+                                                        .executes(this::presetRewardsInfo)
                                                 )
                                         )
                                         .then("add", add -> add
@@ -230,7 +232,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("info", info -> info
                                                 .argument("name", StringArgumentType.string(), name -> name
                                                         .suggests(this::getVisualsPresetLists)
-                                                        .executes(this::help) // TODO
+                                                        .executes(this::presetVisualsInfo)
                                                 )
                                         )
                                 )
@@ -386,6 +388,129 @@ public final class FallingStarCommand extends AbstractCommand {
         return 1;
     }
 
+    private int presetEventsInfo(CommandContext<CommandSourceStack> context) {
+        return presetInfo(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(),
+                "event",
+                this::buildEventPresetInfo
+        );
+    }
+
+    private int presetRewardsInfo(CommandContext<CommandSourceStack> context) {
+        return presetInfo(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(),
+                "reward",
+                this::buildRewardPresetInfo
+        );
+    }
+
+    private int presetVisualsInfo(CommandContext<CommandSourceStack> context) {
+        return presetInfo(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(),
+                "visuals",
+                this::buildVisualsPresetInfo
+        );
+    }
+
+    private <T> int presetInfo(
+            CommandContext<CommandSourceStack> context,
+            ConfigFolderManager<T> manager,
+            String presetType,
+            Function<NamedPreset<T>, Component> infoBuilder
+    ) {
+        String name = StringArgumentType.getString(context, "name");
+        if (!manager.hasConfig(name)) {
+            context.getSource().sendFailure(Component.literal(capitalize(presetType) + " preset not found: " + name).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        T config = manager.getConfig(name);
+        context.getSource().sendSystemMessage(infoBuilder.apply(new NamedPreset<>(name, config)));
+        return 1;
+    }
+
+    private Component buildEventPresetInfo(NamedPreset<EventPresetConfig> preset) {
+        EventPresetConfig config = preset.config();
+        return new ChatTableBuilder("Event Preset: " + preset.name())
+                .addSection("General")
+                .addRow("Enabled", Boolean.toString(config.enabled))
+                .addRow("Rewards Preset", config.rewardsPresetId)
+                .addRow("Visuals Preset", config.visualsPresetId)
+                .addSection("Activation")
+                .addRow("Require Night", Boolean.toString(config.activation.requireNight))
+                .addRow("Require Surface Access", Boolean.toString(config.activation.requireSurfaceAccess))
+                .addRow("Weather Mode", config.activation.weatherMode)
+                .addSection("Spawn")
+                .addRow("Target Scope", config.spawn.targetScope)
+                .addRow("Min Radius", Integer.toString(config.spawn.minRadius))
+                .addRow("Max Radius", Integer.toString(config.spawn.maxRadius))
+                .addRow("Max Location Attempts", Integer.toString(config.spawn.maxLocationAttempts))
+                .addRow("Allow Water Spawns", Boolean.toString(config.spawn.allowWaterSpawns))
+                .build();
+    }
+
+    private Component buildVisualsPresetInfo(NamedPreset<VisualsPresetConfig> preset) {
+        VisualsPresetConfig config = preset.config();
+        return new ChatTableBuilder("Visuals Preset: " + preset.name())
+                .addSection("General")
+                .addRow("Enabled", Boolean.toString(config.enabled))
+                .addRow("Particle Preset", config.particlePreset)
+                .addRow("Fall Distance", Integer.toString(config.fallDistance))
+                .addRow("Emission Interval Ticks", Integer.toString(config.emissionIntervalTicks))
+                .addRow("Particles Per Emission", Integer.toString(config.particlesPerEmission))
+                .addSection("Travel Sound")
+                .addRow("Enabled", Boolean.toString(config.travelSound.enabled))
+                .addRow("Id", config.travelSound.id)
+                .addRow("Volume", Float.toString(config.travelSound.volume))
+                .addRow("Pitch Min", Float.toString(config.travelSound.pitchMin))
+                .addRow("Pitch Max", Float.toString(config.travelSound.pitchMax))
+                .addRow("Interval Ticks", Integer.toString(config.travelSound.intervalTicks))
+                .addSection("Impact")
+                .addRow("Burst Enabled", Boolean.toString(config.impact.burstEnabled))
+                .addRow("Particle Preset", config.impact.particlePreset)
+                .addRow("Particle Count", Integer.toString(config.impact.particleCount))
+                .addRow("Spread", Double.toString(config.impact.spread))
+                .addRow("Sound Enabled", Boolean.toString(config.impact.soundEnabled))
+                .addRow("Sound Id", config.impact.soundId)
+                .addRow("Sound Volume", Float.toString(config.impact.soundVolume))
+                .addRow("Sound Pitch Min", Float.toString(config.impact.soundPitchMin))
+                .addRow("Sound Pitch Max", Float.toString(config.impact.soundPitchMax))
+                .build();
+    }
+
+    private Component buildRewardPresetInfo(NamedPreset<RewardsPresetConfig> preset) {
+        RewardsPresetConfig config = preset.config();
+        ChatTableBuilder builder = new ChatTableBuilder("Reward Preset: " + preset.name())
+                .addSection("Summary")
+                .addRow("Entries", Integer.toString(config.entries.length));
+
+        for (int i = 0; i < config.entries.length; i++) {
+            RewardsPresetConfig.RewardEntry entry = config.entries[i];
+            builder.addSection("Entry " + (i + 1))
+                    .addRow("Id", entry.id)
+                    .addRow("Weight", Integer.toString(entry.weight))
+                    .addRow("Min Count", Integer.toString(entry.minCount))
+                    .addRow("Max Count", Integer.toString(entry.maxCount))
+                    .addRow("Custom Model Data", entry.customModelData == null ? "None" : entry.customModelData.toString())
+                    .addRow("Custom Data", entry.customData == null || entry.customData.isBlank() ? "None" : entry.customData);
+        }
+
+        return builder.build();
+    }
+
+    private String capitalize(String value) {
+        if (value == null || value.isBlank()) {
+            return "Preset";
+        }
+        return value.substring(0, 1).toUpperCase(Locale.ROOT) + value.substring(1);
+    }
+
+    private record NamedPreset<T>(String name, T config) {
+    }
+
     // This should be a random set of characters roughly 8 characters long
     private String generateDeletionKey() {
         int length = 8;
@@ -416,6 +541,7 @@ public final class FallingStarCommand extends AbstractCommand {
             PresetDeletionRequest.PRESET_TYPES presetType,
             String presetTypeLabel
     ) {
+        pruneExpiredDeletionRequests();
         String name = StringArgumentType.getString(context, "name");
         if (!manager.getConfigs().containsKey(name)) {
             String capitalizedType = presetTypeLabel.substring(0, 1).toUpperCase() + presetTypeLabel.substring(1);
@@ -423,21 +549,34 @@ public final class FallingStarCommand extends AbstractCommand {
             return 0;
         }
         String eventKey = generateDeletionKey();
-        PresetDeletionRequest request = new PresetDeletionRequest(presetType, name);
+        PresetDeletionRequest request = new PresetDeletionRequest(presetType, name, System.currentTimeMillis());
         DELETION_REQUESTS.put(eventKey, request);
-        context.getSource().sendSystemMessage(Component.literal("Are you sure you want to delete the " + presetTypeLabel + " preset '" + name + "'? This action cannot be undone. If you're sure, run the command: /fallingstar confirm-delete " + eventKey).withStyle(ChatFormatting.YELLOW));
+        long ttlMinutes = DELETION_REQUEST_TTL_MS / 60_000L;
+        context.getSource().sendSystemMessage(Component
+                .literal(
+                        "Are you sure you want to delete the " + presetTypeLabel + " preset '" + name +
+                                "'? This action cannot be undone. If you're sure, run the command: /fallingstar confirm-delete " +
+                                eventKey + " (expires in " + ttlMinutes + " minutes)."
+                )
+                .withStyle(ChatFormatting.YELLOW)
+        );
         return 1;
     }
 
     private int confirmDelete(CommandContext<CommandSourceStack> context) {
         String key = StringArgumentType.getString(context, "event_id");
 
-        if (!DELETION_REQUESTS.containsKey(key)) {
+        pruneExpiredDeletionRequests();
+        PresetDeletionRequest request = DELETION_REQUESTS.remove(key);
+        if (request == null) {
             context.getSource().sendFailure(Component.literal("Invalid or expired deletion key: " + key).withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        PresetDeletionRequest request = DELETION_REQUESTS.remove(key);
+        if (isDeletionRequestExpired(request)) {
+            context.getSource().sendFailure(Component.literal("Deletion key has expired. Please run the delete command again.").withStyle(ChatFormatting.RED));
+            return 0;
+        }
 
         // Get the appropriate manager based on the preset type
         ConfigFolderManager<?> manager = switch (request.presetType()) {
@@ -461,6 +600,14 @@ public final class FallingStarCommand extends AbstractCommand {
             );
             return 0;
         }
+    }
+
+    private void pruneExpiredDeletionRequests() {
+        DELETION_REQUESTS.entrySet().removeIf(entry -> isDeletionRequestExpired(entry.getValue()));
+    }
+
+    private boolean isDeletionRequestExpired(PresetDeletionRequest request) {
+        return System.currentTimeMillis() - request.createdAtMs() > DELETION_REQUEST_TTL_MS;
     }
 
     @Override
@@ -581,7 +728,7 @@ public final class FallingStarCommand extends AbstractCommand {
         return spawned;
     }
 
-    public record PresetDeletionRequest(PRESET_TYPES presetType, String presetName) {
+    public record PresetDeletionRequest(PRESET_TYPES presetType, String presetName, long createdAtMs) {
         public enum PRESET_TYPES {
                 EVENT,
                 REWARDS,
