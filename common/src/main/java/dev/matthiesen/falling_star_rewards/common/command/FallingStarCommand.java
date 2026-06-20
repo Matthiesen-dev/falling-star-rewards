@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
 import dev.matthiesen.common.matthiesen_lib_api.config.ConfigFolderManager;
 import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
@@ -21,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
@@ -60,72 +63,80 @@ public final class FallingStarCommand extends AbstractCommand {
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
         dispatcher.register(
                 new CommandBuilder("fallingstar", src -> src.hasPermission(4))
-                        .then("help", help -> help.executes(this::help))
-                        .then("reload", reload -> reload.executes(this::reload))
-                        .then("cleanup", cleanup -> cleanup.executes(this::cleanup))
+                        .then("help", help -> help
+                                .executes(this::help)
+                        )
+                        .then("reload", reload -> reload
+                                .executes(this::reload)
+                        )
+                        .then("cleanup", cleanup -> cleanup
+                                .executes(this::cleanup)
+                        )
                         .then("status", status -> status
                                 .executes(this::status)
-                                .then("brief", brief -> brief.executes(this::status))
-                                .then("full", full -> full.executes(this::statusFull))
+                                .then("brief", brief -> brief
+                                        .executes(this::status)
+                                )
+                                .then("full", full -> full
+                                        .executes(this::statusFull)
+                                )
                         )
                         .then("force", force -> force
                                 .executes(this::forceOnce)
-                                .argument("preset", StringArgumentType.string(),
-                                        preset -> preset.suggests((ctx, builder) -> {
-                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                    return builder.buildFuture();
-                                                })
-                                                .executes(this::forcePreset))
+                                .argument("preset", StringArgumentType.string(), preset -> preset
+                                        .suggests(this::getEventsPresetLists)
+                                        .executes(this::forcePreset)
+                                )
                         )
                         .then("preset", preset -> preset
                                 .then("events", events -> events
                                         .then("enable", enable -> enable
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.suggests((ctx, builder) -> {
-                                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                    return builder.buildFuture();
-                                                                })
-                                                                .executes(this::presetEventEnable)))
-                                        .then("disable", enable -> enable
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.suggests((ctx, builder) -> {
-                                                                    FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                    return builder.buildFuture();
-                                                                })
-                                                                .executes(this::presetEventDisable))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getEventsPresetLists)
+                                                        .executes(this::presetEventEnable)
+                                                )
                                         )
-                                        .then("list", list -> list.executes(this::presetEventsList))
+                                        .then("disable", enable -> enable
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getEventsPresetLists)
+                                                        .executes(this::presetEventDisable)
+                                                )
+                                        )
+                                        .then("list", list -> list
+                                                .executes(this::presetEventsList)
+                                        )
                                         .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::presetEventCreate))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .executes(this::presetEventCreate)
+                                                )
                                         )
                                         .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::presetEventsDelete))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getEventsPresetLists)
+                                                        .executes(this::presetEventsDelete)
+                                                )
                                         )
                                         .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getEventsPresetLists)
+                                                        .executes(this::help)
+                                                )
                                         )
                                         .then("set", set -> set
                                                 .then("rewards", rewards -> rewards
                                                         .then(Commands.argument("name", StringArgumentType.string())
+                                                                .suggests(this::getRewardsPresetLists)
                                                                 .then(Commands.argument("preset_id", StringArgumentType.string())
-                                                                        .suggests((ctx, builder) -> {
-                                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                            return builder.buildFuture();
-                                                                        })
+                                                                        .suggests(this::getRewardsPresetLists)
                                                                         .executes(this::help)
                                                                 )
                                                         )
                                                 )
                                                 .then("visuals", rewards -> rewards
                                                         .then(Commands.argument("name", StringArgumentType.string())
+                                                                .suggests(this::getVisualsPresetLists)
                                                                 .then(Commands.argument("preset_id", StringArgumentType.string())
-                                                                        .suggests((ctx, builder) -> {
-                                                                            FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                            return builder.buildFuture();
-                                                                        })
+                                                                        .suggests(this::getVisualsPresetLists)
                                                                         .executes(this::help)
                                                                 )
                                                         )
@@ -133,25 +144,29 @@ public final class FallingStarCommand extends AbstractCommand {
                                         )
                                 )
                                 .then("rewards", rewards -> rewards
-                                        .then("list", list -> list.executes(this::presetRewardsList))
+                                        .then("list", list -> list
+                                                .executes(this::presetRewardsList)
+                                        )
                                         .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::presetRewardsCreate))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .executes(this::presetRewardsCreate)
+                                                )
                                         )
                                         .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::presetRewardsDelete))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getRewardsPresetLists)
+                                                        .executes(this::presetRewardsDelete)
+                                                )
                                         )
                                         .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getRewardsPresetLists)
+                                                        .executes(this::help)
+                                                )
                                         )
                                         .then("add", add -> add
                                                 .then(Commands.argument("name", StringArgumentType.string())
-                                                        .suggests((ctx, builder) -> {
-                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                            return builder.buildFuture();
-                                                        })
+                                                        .suggests(this::getRewardsPresetLists)
                                                         .then(
                                                                 Commands.argument("item_id", StringArgumentType.string())
                                                                         .then(Commands.argument("weight", IntegerArgumentType.integer())
@@ -173,19 +188,13 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("add-held-item", addHeldItem -> addHeldItem
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name
-                                                            .suggests((ctx, builder) -> {
-                                                                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                return builder.buildFuture();
-                                                            })
+                                                            .suggests(this::getRewardsPresetLists)
                                                             .executes(this::help)
                                                 )
                                         )
                                         .then("remove", remove -> remove
                                                 .then(Commands.argument("name", StringArgumentType.string())
-                                                        .suggests((ctx, builder) -> {
-                                                            FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                            return builder.buildFuture();
-                                                        })
+                                                        .suggests(this::getRewardsPresetLists)
                                                         .then(Commands.argument("item_id", StringArgumentType.string())
                                                                 .executes(this::help)
                                                         )
@@ -194,40 +203,63 @@ public final class FallingStarCommand extends AbstractCommand {
                                 )
                                 .then("visuals", visuals -> visuals
                                         .then("enable", enable -> enable
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.suggests((ctx, builder) -> {
-                                                                    FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                    return builder.buildFuture();
-                                                                })
-                                                                .executes(this::presetVisualsEnable)))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getVisualsPresetLists)
+                                                        .executes(this::presetVisualsEnable)
+                                                )
+                                        )
                                         .then("disable", enable -> enable
-                                                .argument("name", StringArgumentType.string(),
-                                                        name -> name.suggests((ctx, builder) -> {
-                                                                    FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager().getConfigs().keySet().forEach(builder::suggest);
-                                                                    return builder.buildFuture();
-                                                                })
-                                                                .executes(this::presetVisualsDisable)))
-                                        .then("list", list -> list.executes(this::presetVisualsList))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getVisualsPresetLists)
+                                                        .executes(this::presetVisualsDisable)
+                                                )
+                                        )
+                                        .then("list", list -> list
+                                                .executes(this::presetVisualsList)
+                                        )
                                         .then("create", create -> create
-                                                .argument("name", StringArgumentType.string(), name ->
-                                                        name.executes(this::presetVisualsCreate))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .executes(this::presetVisualsCreate)
+                                                )
                                         )
                                         .then("delete", delete -> delete
-                                                .argument("name", StringArgumentType.string(), name ->
-                                                        name.executes(this::presetVisualsDelete))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getVisualsPresetLists)
+                                                        .executes(this::presetVisualsDelete)
+                                                )
                                         )
                                         .then("info", info -> info
-                                                .argument("name", StringArgumentType.string(), name ->
-                                                        name.executes(this::help))
+                                                .argument("name", StringArgumentType.string(), name -> name
+                                                        .suggests(this::getVisualsPresetLists)
+                                                        .executes(this::help)
+                                                )
                                         )
                                 )
                         )
                         .then("confirm-delete", confirmDelete -> confirmDelete
-                                .argument("event_id", StringArgumentType.string(),
-                                        eventId -> eventId.executes(this::confirmDelete))
+                                .argument("event_id", StringArgumentType.string(), eventId -> eventId
+                                        .executes(this::confirmDelete)
+                                )
                         )
                         .build()
         );
+    }
+
+    private CompletableFuture<Suggestions> getPresetList(SuggestionsBuilder builder, ConfigFolderManager<?> manager) {
+        manager.getConfigs().keySet().forEach(builder::suggest);
+        return builder.buildFuture();
+    }
+
+    private CompletableFuture<Suggestions> getEventsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager());
+    }
+
+    private CompletableFuture<Suggestions> getRewardsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager());
+    }
+
+    private CompletableFuture<Suggestions> getVisualsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager());
     }
 
     private <T> void updateConfigAndSave(ConfigFolderManager<T> manager, String preset, T config) {
