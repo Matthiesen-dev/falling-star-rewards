@@ -6,6 +6,7 @@ import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 
 import java.util.Map;
@@ -109,7 +110,7 @@ public final class FallingStarsConfigManager {
         return configMap.values().stream().filter(v -> v.enabled).skip(index).findFirst().orElse(null);
     }
 
-    public LoadedPresetConfig loadRandomEventPreset() {
+    public LoadedPreset loadRandomEventPreset() {
         var possibleEvents = EVENTS_CONFIG.getConfigs();
         if (possibleEvents.isEmpty()) {
             return null;
@@ -120,25 +121,13 @@ public final class FallingStarsConfigManager {
         }
         var rewardsConfig = REWARDS_CONFIG.loadConfig(selectedEvent.rewardsPresetId);
         var visualsConfig = VISUALS_CONFIG.loadConfig(selectedEvent.visualsPresetId);
-        return new LoadedPresetConfig(selectedEvent, rewardsConfig, visualsConfig);
+        return new LoadedPreset(selectedEvent, rewardsConfig, visualsConfig);
     }
 
-    public LoadedPresetConfig loadPresetConfig(String eventPresetId) {
+    public LoadedPreset loadPresetConfig(String eventPresetId) {
         var eventConfig = EVENTS_CONFIG.loadConfig(eventPresetId);
         var rewardsConfig = REWARDS_CONFIG.loadConfig(eventConfig.rewardsPresetId);
         var visualsConfig = VISUALS_CONFIG.loadConfig(eventConfig.visualsPresetId);
-        return new LoadedPresetConfig(eventConfig, rewardsConfig, visualsConfig);
-    }
-
-    public static final class LoadedPresetConfig {
-        public EventPresetConfig eventConfig;
-        public RewardsPresetConfig rewardsConfig;
-        public VisualsPresetConfig visualsConfig;
-
-        public LoadedPresetConfig(EventPresetConfig eventConfig, RewardsPresetConfig rewardsConfig, VisualsPresetConfig visualsConfig) {
-            this.eventConfig = eventConfig;
-            this.rewardsConfig = rewardsConfig;
-            this.visualsConfig = visualsConfig;
-        }
+        return new LoadedPreset(eventConfig, rewardsConfig, visualsConfig);
     }
 }
