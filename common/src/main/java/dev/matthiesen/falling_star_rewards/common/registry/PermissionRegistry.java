@@ -9,7 +9,7 @@ import net.minecraft.commands.CommandSourceStack;
 
 public final class PermissionRegistry {
     public static Permission COMMAND_ROOT = register(
-            "command.fallingstar.root",
+            "command.fallingstar",
         FallingStarRewards.INSTANCE.getPermissionsConfig().command.root
     );
     public static Permission COMMAND_FALLINGSTAR_HELP = register(
