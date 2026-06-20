@@ -77,9 +77,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 })
                                                 .executes(this::forcePreset))
                         )
-
                         .then("preset", preset -> preset
-
                                 .then("events", events -> events
                                         .then("enable", enable -> enable
                                                 .argument("name", StringArgumentType.string(),
@@ -134,7 +132,6 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 )
                                         )
                                 )
-
                                 .then("rewards", rewards -> rewards
                                         .then("list", list -> list.executes(this::presetRewardsList))
                                         .then("create", create -> create
@@ -195,7 +192,6 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 )
                                         )
                                 )
-
                                 .then("visuals", visuals -> visuals
                                         .then("enable", enable -> enable
                                                 .argument("name", StringArgumentType.string(),
@@ -225,7 +221,6 @@ public final class FallingStarCommand extends AbstractCommand {
                                                         name.executes(this::help))
                                         )
                                 )
-
                         )
                         .then("confirm-delete", confirmDelete -> confirmDelete
                                 .argument("event_id", StringArgumentType.string(),
