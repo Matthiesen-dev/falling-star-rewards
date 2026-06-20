@@ -8,7 +8,7 @@ import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import net.minecraft.commands.CommandSourceStack;
 
 public final class PermissionRegistry {
-    public static Permission COMMAND_ROOT = register(
+    public static Permission COMMAND_FALLINGSTAR = register(
             "command.fallingstar",
         FallingStarRewards.INSTANCE.getPermissionsConfig().command.root
     );
@@ -74,7 +74,7 @@ public final class PermissionRegistry {
     );
 
     public static class Permissions {
-        public Permission COMMAND_ROOT = PermissionRegistry.COMMAND_ROOT;
+        public Permission COMMAND_FALLINGSTAR = PermissionRegistry.COMMAND_FALLINGSTAR;
         public Permission COMMAND_FALLINGSTAR_HELP = PermissionRegistry.COMMAND_FALLINGSTAR_HELP;
         public Permission COMMAND_FALLINGSTAR_RELOAD = PermissionRegistry.COMMAND_FALLINGSTAR_RELOAD;
         public Permission COMMAND_FALLINGSTAR_CLEANUP = PermissionRegistry.COMMAND_FALLINGSTAR_CLEANUP;

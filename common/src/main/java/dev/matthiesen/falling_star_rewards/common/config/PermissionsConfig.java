@@ -11,7 +11,7 @@ public final class PermissionsConfig {
 
     public static class CommandPermissions {
         @SerializedName("root")
-        public int root = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int root = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("fallingstar")
         public FallingstarSubCommands fallingstar = new FallingstarSubCommands();
@@ -19,22 +19,22 @@ public final class PermissionsConfig {
 
     public static class FallingstarSubCommands {
         @SerializedName("help")
-        public int help = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int help = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("reload")
-        public int reload = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int reload = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("cleanup")
-        public int cleanup = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int cleanup = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("status")
-        public int status = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int status = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("force")
-        public int force = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int force = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("confirm-delete")
-        public int confirmDelete = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int confirmDelete = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("preset")
         public PresetSubCommands preset = new PresetSubCommands();
@@ -42,31 +42,31 @@ public final class PermissionsConfig {
 
     public static class PresetSubCommands {
         @SerializedName("enable")
-        public int enable = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int enable = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("disable")
-        public int disable = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int disable = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("list")
-        public int list = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int list = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("create")
-        public int create = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int create = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("delete")
-        public int delete = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int delete = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("info")
-        public int info = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int info = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("set")
-        public int set = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int set = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("add")
-        public int add = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int add = PermissionLevel.ALL_COMMANDS.getNumericalValue();
 
         @SerializedName("remove")
-        public int remove = PermissionLevel.CHEAT_COMMANDS_AND_COMMAND_BLOCKS.getNumericalValue();
+        public int remove = PermissionLevel.ALL_COMMANDS.getNumericalValue();
     }
 
     @SuppressWarnings("unused")

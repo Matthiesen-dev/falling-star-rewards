@@ -98,7 +98,7 @@ public final class FallingStarCommand extends AbstractCommand {
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
         dispatcher.register(
                 new CommandBuilder("fallingstar", FallingStarRewards.getPermissionPredicate(
-                        FallingStarRewards.getPermissions().COMMAND_ROOT
+                        FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR
                 ))
                         .then(getReloadSubCommand())
                         .then(getCleanupSubCommand())
