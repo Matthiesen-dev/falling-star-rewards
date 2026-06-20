@@ -18,12 +18,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.CustomModelData;
+import net.minecraft.nbt.CompoundTag;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -48,11 +57,11 @@ import java.util.function.Function;
  *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar preset [events|visuals|rewards] info [name]
  *     /fallingstar preset events set [reward|visuals] [name] [preset name]
+ *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
+ *     /fallingstar preset rewards add-held-item [name]
  *
  *     Planned:
  *
- *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
- *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
  *</pre>
  */
@@ -60,6 +69,7 @@ public final class FallingStarCommand extends AbstractCommand {
     public static final FallingStarCommand CMD = new FallingStarCommand();
     private static final Map<String, PresetDeletionRequest> DELETION_REQUESTS = new LinkedHashMap<>();
     private static final long DELETION_REQUEST_TTL_MS = 5L * 60L * 1000L;
+    private static final int HELP_PAGE_COUNT = 4;
 
     @Override
     public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
@@ -67,6 +77,9 @@ public final class FallingStarCommand extends AbstractCommand {
                 new CommandBuilder("fallingstar", src -> src.hasPermission(4))
                         .then("help", help -> help
                                 .executes(this::help)
+                                .argument("page", IntegerArgumentType.integer(1, HELP_PAGE_COUNT), page -> page
+                                        .executes(this::helpPage)
+                                )
                         )
                         .then("reload", reload -> reload
                                 .executes(this::reload)
@@ -174,11 +187,11 @@ public final class FallingStarCommand extends AbstractCommand {
                                                                         .then(Commands.argument("weight", IntegerArgumentType.integer())
                                                                                 .then(Commands.argument("min", IntegerArgumentType.integer())
                                                                                         .then(Commands.argument("max", IntegerArgumentType.integer())
-                                                                                                .executes(this::help) // TODO
+                                                                                                .executes(this::presetRewardsAdd)
                                                                                                 .then(Commands.argument("custom_model_data", IntegerArgumentType.integer())
-                                                                                                        .executes(this::help) // TODO
+                                                                                                        .executes(this::presetRewardsAddWithCustomModelData)
                                                                                                         .then(Commands.argument("custom_data", StringArgumentType.string())
-                                                                                                                .executes(this::help) // TODO
+                                                                                                                .executes(this::presetRewardsAddWithCustomModelDataAndCustomData)
                                                                                                         )
                                                                                                 )
                                                                                         )
@@ -191,7 +204,7 @@ public final class FallingStarCommand extends AbstractCommand {
                                                 .argument("name", StringArgumentType.string(),
                                                         name -> name
                                                             .suggests(this::getRewardsPresetLists)
-                                                            .executes(this::help) // TODO
+                                                            .executes(this::presetRewardsAddHeldItem)
                                                 )
                                         )
                                         .then("remove", remove -> remove
@@ -676,7 +689,18 @@ public final class FallingStarCommand extends AbstractCommand {
     }
 
     public int help(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSystemMessage(buildHelpTable());
+        context.getSource().sendSystemMessage(buildHelpTable(1));
+        return 1;
+    }
+
+    public int helpPage(CommandContext<CommandSourceStack> context) {
+        int page = IntegerArgumentType.getInteger(context, "page");
+        if (page < 1 || page > HELP_PAGE_COUNT) {
+            context.getSource().sendFailure(Component.literal("Help page must be between 1 and " + HELP_PAGE_COUNT + ".").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        context.getSource().sendSystemMessage(buildHelpTable(page));
         return 1;
     }
 
@@ -734,10 +758,12 @@ public final class FallingStarCommand extends AbstractCommand {
         return builder.build();
     }
 
-    private Component buildHelpTable() {
-        return new ChatTableBuilder("Falling Star Rewards Commands")
+    private Component buildHelpTable(int page) {
+        return switch (page) {
+            case 1 -> new ChatTableBuilder("Falling Star Rewards Commands (Page 1/" + HELP_PAGE_COUNT + ")")
                 .addSection("General")
                 .addRow("/fallingstar help", "Show this command list")
+                .addRow("/fallingstar help <page>", "Show a specific help page")
                 .addRow("/fallingstar reload", "Reload config from disk")
                 .addSection("Status")
                 .addRow("/fallingstar status", "Show condensed status output")
@@ -748,6 +774,158 @@ public final class FallingStarCommand extends AbstractCommand {
                 .addRow("/fallingstar force <preset>", "Force a spawn cycle with the specified preset")
                 .addRow("/fallingstar cleanup", "Remove tracked active drops")
                 .build();
+            case 2 -> new ChatTableBuilder("Falling Star Rewards Commands (Page 2/" + HELP_PAGE_COUNT + ")")
+                .addSection("Event Presets")
+                .addRow("/fallingstar preset events list", "List event presets")
+                .addRow("/fallingstar preset events enable <name>", "Enable an event preset")
+                .addRow("/fallingstar preset events disable <name>", "Disable an event preset")
+                .addRow("/fallingstar preset events create <name>", "Create an event preset")
+                .addRow("/fallingstar preset events delete <name>", "Delete an event preset")
+                .addRow("/fallingstar preset events info <name>", "Show event preset details")
+                .addRow("/fallingstar preset events set rewards <name> <preset_id>", "Set the rewards preset used by an event preset")
+                .addRow("/fallingstar preset events set visuals <name> <preset_id>", "Set the visuals preset used by an event preset")
+                .build();
+            case 3 -> new ChatTableBuilder("Falling Star Rewards Commands (Page 3/" + HELP_PAGE_COUNT + ")")
+                .addSection("Reward Presets")
+                .addRow("/fallingstar preset rewards list", "List reward presets")
+                .addRow("/fallingstar preset rewards create <name>", "Create a reward preset")
+                .addRow("/fallingstar preset rewards delete <name>", "Delete a reward preset")
+                .addRow("/fallingstar preset rewards info <name>", "Show reward preset details")
+                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max>", "Add a reward entry")
+                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max> <custom_model_data>", "Add a reward entry with custom model data")
+                .addRow("/fallingstar preset rewards add <name> <item_id> <weight> <min> <max> <custom_model_data> <custom_data>", "Add a reward entry with custom model data and custom data")
+                .addRow("/fallingstar preset rewards add-held-item <name>", "Add the held item as a reward entry")
+                .addRow("/fallingstar preset rewards remove <name> <item_id>", "Remove a reward entry from a preset")
+                .build();
+            case 4 -> new ChatTableBuilder("Falling Star Rewards Commands (Page 4/" + HELP_PAGE_COUNT + ")")
+                .addSection("Visual Presets")
+                .addRow("/fallingstar preset visuals list", "List visuals presets")
+                .addRow("/fallingstar preset visuals enable <name>", "Enable a visuals preset")
+                .addRow("/fallingstar preset visuals disable <name>", "Disable a visuals preset")
+                .addRow("/fallingstar preset visuals create <name>", "Create a visuals preset")
+                .addRow("/fallingstar preset visuals delete <name>", "Delete a visuals preset")
+                .addRow("/fallingstar preset visuals info <name>", "Show visuals preset details")
+                .build();
+            default -> throw new IllegalStateException("Unexpected help page: " + page);
+        };
+    }
+
+    private int presetRewardsAdd(CommandContext<CommandSourceStack> context) {
+        return presetRewardsAdd(context, null, null);
+    }
+
+    private int presetRewardsAddWithCustomModelData(CommandContext<CommandSourceStack> context) {
+        int customModelData = IntegerArgumentType.getInteger(context, "custom_model_data");
+        return presetRewardsAdd(context, customModelData, null);
+    }
+
+    private int presetRewardsAddWithCustomModelDataAndCustomData(CommandContext<CommandSourceStack> context) {
+        int customModelData = IntegerArgumentType.getInteger(context, "custom_model_data");
+        String customData = StringArgumentType.getString(context, "custom_data");
+        return presetRewardsAdd(context, customModelData, customData);
+    }
+
+    private int presetRewardsAdd(CommandContext<CommandSourceStack> context, Integer customModelData, String customData) {
+        String presetName = StringArgumentType.getString(context, "name");
+        String itemId = StringArgumentType.getString(context, "item_id");
+        int weight = IntegerArgumentType.getInteger(context, "weight");
+        int min = IntegerArgumentType.getInteger(context, "min");
+        int max = IntegerArgumentType.getInteger(context, "max");
+
+        ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
+        if (!manager.hasConfig(presetName)) {
+            context.getSource().sendFailure(Component.literal("Reward preset not found: " + presetName).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        RewardsPresetConfig config = manager.getConfig(presetName);
+        RewardsPresetConfig.RewardEntry entry = new RewardsPresetConfig.RewardEntry(itemId, weight, min, max, customModelData, customData);
+
+        config.entries = config.entries == null ? new RewardsPresetConfig.RewardEntry[] { entry } : Arrays.copyOf(config.entries, config.entries.length + 1);
+        config.entries[config.entries.length - 1] = entry;
+        updateConfigAndSave(manager, presetName, config);
+
+        context.getSource().sendSystemMessage(
+                new ChatTableBuilder("Reward Entry Added")
+                        .addSection("Preset")
+                        .addRow("Name", presetName)
+                        .addSection("Entry")
+                        .addRow("Item Id", itemId)
+                        .addRow("Weight", Integer.toString(weight))
+                        .addRow("Min Count", Integer.toString(min))
+                        .addRow("Max Count", Integer.toString(max))
+                        .addRow("Custom Model Data", customModelData == null ? "None" : customModelData.toString())
+                        .addRow("Custom Data", customData == null || customData.isBlank() ? "None" : customData)
+                        .build()
+        );
+        return 1;
+    }
+
+    private int presetRewardsAddHeldItem(CommandContext<CommandSourceStack> context) {
+        String presetName = StringArgumentType.getString(context, "name");
+        ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
+
+        if (!manager.hasConfig(presetName)) {
+            context.getSource().sendFailure(Component.literal("Reward preset not found: " + presetName).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        ServerPlayer player;
+        try {
+            player = context.getSource().getPlayerOrException();
+        } catch (CommandSyntaxException e) {
+            context.getSource().sendFailure(Component.literal("This command can only be used by a player holding an item.").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        ItemStack stack = player.getMainHandItem();
+        if (stack.isEmpty()) {
+            context.getSource().sendFailure(Component.literal("You must hold an item in your main hand to use this command.").withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        RewardsPresetConfig.RewardEntry entry = buildRewardEntryFromHeldItem(stack);
+        RewardsPresetConfig config = manager.getConfig(presetName);
+        config.entries = config.entries == null ? new RewardsPresetConfig.RewardEntry[] { entry } : Arrays.copyOf(config.entries, config.entries.length + 1);
+        config.entries[config.entries.length - 1] = entry;
+        updateConfigAndSave(manager, presetName, config);
+
+        context.getSource().sendSystemMessage(
+                new ChatTableBuilder("Reward Entry Added From Held Item")
+                        .addSection("Preset")
+                        .addRow("Name", presetName)
+                        .addSection("Entry")
+                        .addRow("Item Id", entry.id)
+                        .addRow("Weight", Integer.toString(entry.weight))
+                        .addRow("Min Count", Integer.toString(entry.minCount))
+                        .addRow("Max Count", Integer.toString(entry.maxCount))
+                        .addRow("Custom Model Data", entry.customModelData == null ? "None" : entry.customModelData.toString())
+                        .addRow("Custom Data", entry.customData == null || entry.customData.isBlank() ? "None" : entry.customData)
+                        .build()
+        );
+        return 1;
+    }
+
+    private RewardsPresetConfig.RewardEntry buildRewardEntryFromHeldItem(ItemStack stack) {
+        String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        Integer customModelData = null;
+        if (stack.has(DataComponents.CUSTOM_MODEL_DATA)) {
+            CustomModelData modelData = stack.get(DataComponents.CUSTOM_MODEL_DATA);
+            if (modelData != null) {
+                customModelData = modelData.value();
+            }
+        }
+
+        String customData = null;
+        if (stack.has(DataComponents.CUSTOM_DATA)) {
+            CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+            if (data != null) {
+                CompoundTag tag = data.copyTag();
+                customData = tag.toString();
+            }
+        }
+
+        return new RewardsPresetConfig.RewardEntry(itemId, 1, stack.getCount(), stack.getCount(), customModelData, customData);
     }
 
     public int cleanup(CommandContext<CommandSourceStack> context) {
