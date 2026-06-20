@@ -11,7 +11,9 @@ import net.minecraft.network.chat.Component;
 
 public final class ForceCommand {
     public static CommandBuilder getForceSubCommand() {
-        return new CommandBuilder("force")
+        return new CommandBuilder("force", FallingStarRewards.getPermissionPredicate(
+                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_FORCE
+        ))
                 .executes(ForceCommand::forceOnce)
                 .argument("preset", StringArgumentType.string(), preset -> preset
                         .suggests(FallingStarCommand::getEventsPresetLists)

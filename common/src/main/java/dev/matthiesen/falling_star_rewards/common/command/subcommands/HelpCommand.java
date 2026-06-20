@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
 import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
+import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -12,7 +13,9 @@ public final class HelpCommand {
     private static final int HELP_PAGE_COUNT = 4;
 
     public static CommandBuilder getHelpSubCommand() {
-        return new CommandBuilder("help")
+        return new CommandBuilder("help", FallingStarRewards.getPermissionPredicate(
+                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_HELP
+        ))
                 .executes(HelpCommand::help)
                 .argument("page", IntegerArgumentType.integer(1, HELP_PAGE_COUNT), page -> page
                         .executes(HelpCommand::helpPage)

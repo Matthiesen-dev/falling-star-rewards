@@ -50,11 +50,17 @@ public final class PresetsCommand {
             Command<CommandSourceStack> disableCommand
     ) {
         return cmdBuilder.then("enable", enable -> enable
+                .requires(FallingStarRewards.getPermissionPredicate(
+                        FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_ENABLE
+                ))
                 .argument("name", StringArgumentType.string(), name -> name
                         .suggests(suggestionsFuture)
                         .executes(enableCommand)
                 )
         ).then("disable", disable -> disable
+                .requires(FallingStarRewards.getPermissionPredicate(
+                        FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_DISABLE
+                ))
                 .argument("name", StringArgumentType.string(), name -> name
                         .suggests(suggestionsFuture)
                         .executes(disableCommand)
@@ -71,19 +77,33 @@ public final class PresetsCommand {
             Command<CommandSourceStack> infoCommand
     ) {
         return cmdBuilder
-                .then("list", list -> list.executes(listCommand))
+                .then("list", list -> list
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_LIST
+                        ))
+                        .executes(listCommand)
+                )
                 .then("create", create -> create
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_CREATE
+                        ))
                         .argument("name", StringArgumentType.string(), name -> name
                                 .executes(createCommand)
                         )
                 )
                 .then("delete", delete -> delete
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_DELETE
+                        ))
                         .argument("name", StringArgumentType.string(), name -> name
                                 .suggests(suggestionsFuture)
                                 .executes(deleteCommand)
                         )
                 )
                 .then("info", info -> info
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_INFO
+                        ))
                         .argument("name", StringArgumentType.string(), name -> name
                                 .suggests(suggestionsFuture)
                                 .executes(infoCommand)
@@ -109,6 +129,9 @@ public final class PresetsCommand {
         );
         return builder
                 .then("set", set -> set
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_SET
+                        ))
                         .then("rewards", rewards -> rewards
                                 .then(Commands.argument("name", StringArgumentType.string())
                                         .suggests(FallingStarCommand::getEventsPresetLists)
@@ -142,6 +165,9 @@ public final class PresetsCommand {
         );
         return builder
                 .then("add", add -> add
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_ADD
+                        ))
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .suggests(FallingStarCommand::getRewardsPresetLists)
                                 .then(
@@ -163,6 +189,9 @@ public final class PresetsCommand {
                         )
                 )
                 .then("add-held-item", addHeldItem -> addHeldItem
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_ADD
+                        ))
                         .argument("name", StringArgumentType.string(),
                                 name -> name
                                         .suggests(FallingStarCommand::getRewardsPresetLists)
@@ -176,6 +205,9 @@ public final class PresetsCommand {
                         )
                 )
                 .then("remove", remove -> remove
+                        .requires(FallingStarRewards.getPermissionPredicate(
+                                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_PRESET_REMOVE
+                        ))
                         .then(Commands.argument("name", StringArgumentType.string())
                                 .suggests(FallingStarCommand::getRewardsPresetLists)
                                 .then(Commands.argument("item_id", StringArgumentType.string())

@@ -15,7 +15,9 @@ import java.util.Locale;
 
 public final class ConfirmDeleteCommand {
     public static CommandBuilder getConfirmDeleteSubCommand() {
-        return new CommandBuilder("confirm-delete")
+        return new CommandBuilder("confirm-delete", FallingStarRewards.getPermissionPredicate(
+                FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_CONFIRM_DELETE
+        ))
                 .argument("event_id", StringArgumentType.string(), eventId -> eventId
                         .executes(ConfirmDeleteCommand::confirmDelete)
                 );
