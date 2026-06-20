@@ -74,6 +74,21 @@ public final class FallingStarCommand extends AbstractCommand {
     private static final long DELETION_REQUEST_TTL_MS = 5L * 60L * 1000L;
     private static final int HELP_PAGE_COUNT = 4;
 
+    @Override
+    public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
+        dispatcher.register(
+                new CommandBuilder("fallingstar", src -> src.hasPermission(4))
+                        .then(getHelpSubCommand())
+                        .then(getReloadSubCommand())
+                        .then(getCleanupSubCommand())
+                        .then(getStatusSubCommand())
+                        .then(getForceSubCommand())
+                        .then(getConfirmDeleteSubCommand())
+                        .then(getPresetSubCommand())
+                        .build()
+        );
+    }
+
     private CommandBuilder getHelpSubCommand() {
         return new CommandBuilder("help")
                 .executes(this::help)
@@ -284,21 +299,6 @@ public final class FallingStarCommand extends AbstractCommand {
                 .then(getPresetEventsSubCommand())
                 .then(getPresetRewardsSubCommand())
                 .then(getPresetVisualsSubCommand());
-    }
-
-    @Override
-    public void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registry, Commands.CommandSelection context) {
-        dispatcher.register(
-                new CommandBuilder("fallingstar", src -> src.hasPermission(4))
-                        .then(getHelpSubCommand())
-                        .then(getReloadSubCommand())
-                        .then(getCleanupSubCommand())
-                        .then(getStatusSubCommand())
-                        .then(getForceSubCommand())
-                        .then(getConfirmDeleteSubCommand())
-                        .then(getPresetSubCommand())
-                        .build()
-        );
     }
 
     private CompletableFuture<Suggestions> getPresetList(SuggestionsBuilder builder, ConfigFolderManager<?> manager) {
