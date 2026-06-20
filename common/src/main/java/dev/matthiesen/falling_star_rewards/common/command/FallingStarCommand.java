@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -46,10 +47,10 @@ import java.util.function.Function;
  *     /fallingstar preset [events|visuals|rewards] create [name]
  *     /fallingstar preset [events|visuals|rewards] delete [name]
  *     /fallingstar preset [events|visuals|rewards] info [name]
+ *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *
  *     Planned:
  *
- *     /fallingstar preset events set [reward|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name]
  *     /fallingstar preset rewards remove [name] [item_id]
@@ -126,19 +127,19 @@ public final class FallingStarCommand extends AbstractCommand {
                                         .then("set", set -> set
                                                 .then("rewards", rewards -> rewards
                                                         .then(Commands.argument("name", StringArgumentType.string())
-                                                                .suggests(this::getRewardsPresetLists)
+                                                                .suggests(this::getEventsPresetLists)
                                                                 .then(Commands.argument("preset_id", StringArgumentType.string())
                                                                         .suggests(this::getRewardsPresetLists)
-                                                                        .executes(this::help) // TODO
+                                                                        .executes(this::presetEventSetRewards)
                                                                 )
                                                         )
                                                 )
                                                 .then("visuals", rewards -> rewards
                                                         .then(Commands.argument("name", StringArgumentType.string())
-                                                                .suggests(this::getVisualsPresetLists)
+                                                                .suggests(this::getEventsPresetLists)
                                                                 .then(Commands.argument("preset_id", StringArgumentType.string())
                                                                         .suggests(this::getVisualsPresetLists)
-                                                                        .executes(this::help) // TODO
+                                                                        .executes(this::presetEventSetVisuals)
                                                                 )
                                                         )
                                                 )
@@ -385,6 +386,57 @@ public final class FallingStarCommand extends AbstractCommand {
         }
         manager.loadConfig(name);
         context.getSource().sendSystemMessage(Component.literal(presetTitle + " preset '" + name + "' created successfully.").withStyle(ChatFormatting.GREEN));
+        return 1;
+    }
+
+    private int presetEventSetRewards(CommandContext<CommandSourceStack> context) {
+        return presetEventSet(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(),
+                "reward",
+                (eventConfig, presetId) -> eventConfig.rewardsPresetId = presetId,
+                "Rewards"
+        );
+    }
+
+    private int presetEventSetVisuals(CommandContext<CommandSourceStack> context) {
+        return presetEventSet(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(),
+                "visuals",
+                (eventConfig, presetId) -> eventConfig.visualsPresetId = presetId,
+                "Visuals"
+        );
+    }
+
+    private <T> int presetEventSet(
+            CommandContext<CommandSourceStack> context,
+            ConfigFolderManager<T> targetManager,
+            String targetType,
+            BiConsumer<EventPresetConfig, String> setter,
+            String label
+    ) {
+        String eventPresetId = StringArgumentType.getString(context, "name");
+        String presetId = StringArgumentType.getString(context, "preset_id");
+
+        var eventManager = FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
+        if (!eventManager.hasConfig(eventPresetId)) {
+            context.getSource().sendFailure(Component.literal("Event preset not found: " + eventPresetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        if (!targetManager.hasConfig(presetId)) {
+            context.getSource().sendFailure(Component.literal(capitalize(targetType) + " preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        EventPresetConfig eventConfig = eventManager.getConfig(eventPresetId);
+        setter.accept(eventConfig, presetId);
+        updateConfigAndSave(eventManager, eventPresetId, eventConfig);
+
+        context.getSource().sendSystemMessage(Component.literal(
+                label + " preset for event '" + eventPresetId + "' has been set to '" + presetId + "'."
+        ).withStyle(ChatFormatting.GREEN));
         return 1;
     }
 
