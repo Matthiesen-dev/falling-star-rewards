@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public final class MainConfig {
     @SerializedName("enabled")
     public boolean enabled = true;
@@ -11,9 +13,13 @@ public final class MainConfig {
     @SerializedName("enablePresetGeneration")
     public boolean enablePresetGeneration = true;
 
+    @SerializedName("enabledSchedules")
+    public List<String> enabledSchedules = List.of("base");
+
     @SerializedName("claim")
     public Claim claim = new Claim();
 
+    // TODO Remove this once the new schedules system is in place
     @SerializedName("scheduler")
     public Scheduler scheduler = new Scheduler();
 
@@ -28,6 +34,7 @@ public final class MainConfig {
         public int maxActiveDrops = 64;
     }
 
+    // TODO Remove this once the new schedules system is in place
     public static final class Scheduler {
         @SerializedName("baseIntervalTicks")
         public int baseIntervalTicks = 20 * 120;

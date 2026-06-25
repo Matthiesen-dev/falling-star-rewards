@@ -5,6 +5,7 @@ import dev.matthiesen.common.matthiesen_lib_api.config.ConfigManager;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
@@ -12,6 +13,8 @@ import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import java.util.Map;
 
 public final class FallingStarsConfigManager {
+    private static final String BASE_ID = "base";
+
     private final FallingStarRewards MOD_INSTANCE;
     private ConfigManager<MainConfig> MAIN_CONFIG;
     private ConfigManager<AnnouncementsConfig> ANNOUNCEMENTS_CONFIG;
@@ -19,6 +22,7 @@ public final class FallingStarsConfigManager {
     private ConfigFolderManager<EventPresetConfig> EVENTS_CONFIG;
     private ConfigFolderManager<RewardsPresetConfig> REWARDS_CONFIG;
     private ConfigFolderManager<VisualsPresetConfig> VISUALS_CONFIG;
+    private ConfigFolderManager<SchedulePresetConfig> SCHEDULES_CONFIG;
 
     public FallingStarsConfigManager(FallingStarRewards instance) {
         this.MOD_INSTANCE = instance;
@@ -32,6 +36,8 @@ public final class FallingStarsConfigManager {
         REWARDS_CONFIG = MOD_INSTANCE.createConfigFolderManager(RewardsPresetConfig.class, "rewards");
         VISUALS_CONFIG = MOD_INSTANCE.createConfigFolderManager(VisualsPresetConfig.class, "visuals");
 
+        SCHEDULES_CONFIG = MOD_INSTANCE.createConfigFolderManager(SchedulePresetConfig.class, "schedules");
+
         // Load the main config to verify if we need to generate presets
         var config = MAIN_CONFIG.loadConfig();
         ANNOUNCEMENTS_CONFIG.loadConfig();
@@ -39,14 +45,16 @@ public final class FallingStarsConfigManager {
         EVENTS_CONFIG.loadConfigs();
         REWARDS_CONFIG.loadConfigs();
         VISUALS_CONFIG.loadConfigs();
+        SCHEDULES_CONFIG.loadConfigs();
         handlePresetGeneration(config.enablePresetGeneration);
     }
 
     public void handlePresetGeneration(boolean enabled) {
         if (enabled) {
-            EVENTS_CONFIG.loadConfig("base");
-            REWARDS_CONFIG.loadConfig("base");
-            VISUALS_CONFIG.loadConfig("base");
+            EVENTS_CONFIG.loadConfig(BASE_ID);
+            REWARDS_CONFIG.loadConfig(BASE_ID);
+            VISUALS_CONFIG.loadConfig(BASE_ID);
+            SCHEDULES_CONFIG.loadConfig(BASE_ID);
         }
     }
 
