@@ -23,11 +23,16 @@
 
 ## Runtime Flow (Target)
 1. Every server tick, loader callback calls `FallingStarRewards.onServerTick(gameTick)`.
-2. `StarEventOrchestrator` checks if a cycle should run based on scheduler config.
-3. If cycle starts, runtime picks eligible target players/worlds (depending on scope).
+2. `StarEventOrchestrator` checks each enabled schedule and decides if that schedule should run a cycle.
+3. If a schedule cycle starts, runtime chooses one event preset (`random`, `weighted`, or `rotation`) and then picks eligible target players/worlds (depending on scope).
 4. For each target, runtime finds a safe nearby location within configured radius.
 5. Mod spawns an item marker or reward payload and schedules cleanup.
 6. Optional announcement is sent to nearby players or globally.
+
+## Breaking Change (Beta)
+- Legacy `config.scheduler` and event `activation` fields have been hard-removed.
+- All activation logic now lives inside schedule presets under `/config/falling_star_rewards/schedules/*.json`.
+- `config.enabledSchedules` controls which schedules are active.
 
 ## Planned Common Services
 - `StarEventOrchestrator`
@@ -41,19 +46,12 @@
 
 Current implementation note: active item drops are tracked and explicitly discarded when `claim.lifeTicks` is reached.
 
-## Config Contract (v1)
+## Config Contract (v2)
 
 ### `/config/falling_star_rewards/config.json` - Main config file.
 
 - `enabled`: master switch.
-- `scheduler`
-  - `baseIntervalTicks`: base delay between cycles.
-  - `intervalJitterTicks`: random extra delay (0..jitter).
-  - `maxStarsPerCycle`: cap events started in one cycle.
-- `activation`
-  - `requireNight`: require nighttime to start events.
-  - `requireSurfaceAccess`: skip players in covered areas/caves (planned check).
-  - `weatherMode`: `any | clear | rain | thunder`.
+- `enabledSchedules`: list of active schedule preset IDs.
 - `spawn`
   - `targetScope`: `per_player | global`.
   - `minRadius`, `maxRadius`: distance from target player.
@@ -67,16 +65,7 @@ Current implementation note: active item drops are tracked and explicitly discar
 ```json
 {
   "enabled": true,
-  "scheduler": {
-    "baseIntervalTicks": 2400,
-    "intervalJitterTicks": 600,
-    "maxStarsPerCycle": 1
-  },
-  "activation": {
-    "requireNight": true,
-    "requireSurfaceAccess": true,
-    "weatherMode": "any"
-  },
+  "enabledSchedules": ["base"],
   "spawn": {
     "targetScope": "per_player",
     "minRadius": 16,
@@ -88,6 +77,47 @@ Current implementation note: active item drops are tracked and explicitly discar
     "lifeTicks": 900,
     "pickupDelayTicks": 10,
     "maxActiveDrops": 64
+  }
+}
+```
+
+### `/config/falling_star_rewards/schedules/<id>.json` - Schedule preset file.
+
+- `enabled`: toggles this schedule.
+- `baseIntervalTicks`: base delay between schedule cycles.
+- `intervalJitterTicks`: random extra delay (0..jitter).
+- `maxStarsPerCycle`: cap events started for this schedule cycle.
+- `selectionMode`: `random | weighted | rotation`.
+- `eventEntries[]`
+  - `eventPresetId`: event preset to select from.
+  - `enabled`: include/exclude this entry.
+  - `weight`: used by `weighted` mode, defaults to `1` when missing/non-positive.
+- `conditions`
+  - `timeMode`: `any | day | night`.
+  - `requireSurfaceAccess`: skip players in covered areas/caves.
+  - `weatherMode`: `any | clear | rain | thunder`.
+  - `moonPhases`: accepts names and/or numeric IDs (`0..7`), mixed values are de-duplicated.
+- `state.rotationCursor`: persisted rotation pointer for deterministic `rotation` mode.
+
+```json
+{
+  "enabled": true,
+  "baseIntervalTicks": 2400,
+  "intervalJitterTicks": 600,
+  "maxStarsPerCycle": 1,
+  "selectionMode": "weighted",
+  "eventEntries": [
+    { "eventPresetId": "base", "enabled": true, "weight": 3 },
+    { "eventPresetId": "rare", "enabled": true, "weight": 1 }
+  ],
+  "conditions": {
+    "timeMode": "night",
+    "requireSurfaceAccess": true,
+    "weatherMode": "any",
+    "moonPhases": ["full_moon", "0", "new_moon", "4"]
+  },
+  "state": {
+    "rotationCursor": 0
   }
 }
 ```

@@ -35,10 +35,10 @@ import java.util.concurrent.CompletableFuture;
  *     /fallingstar force [preset]
  *     /fallingstar confirm-delete [event_id]
  *     /fallingstar preset [events|visuals] [disable|enable] [name]
- *     /fallingstar preset [events|visuals|rewards] list
- *     /fallingstar preset [events|visuals|rewards] create [name]
- *     /fallingstar preset [events|visuals|rewards] delete [name]
- *     /fallingstar preset [events|visuals|rewards] info [name]
+ *     /fallingstar preset [events|visuals|rewards|schedules] list
+ *     /fallingstar preset [events|visuals|rewards|schedules] create [name]
+ *     /fallingstar preset [events|visuals|rewards|schedules] delete [name]
+ *     /fallingstar preset [events|visuals|rewards|schedules] info [name]
  *     /fallingstar preset events set [rewards|visuals] [name] [preset name]
  *     /fallingstar preset rewards add [name] [item_id] [weight] [min] [max] (custom_model_data) (custom_data)
  *     /fallingstar preset rewards add-held-item [name] [weight] [min] [max]
@@ -92,6 +92,11 @@ public final class FallingStarCommand extends AbstractCommand {
     @SuppressWarnings("unused")
     public static CompletableFuture<Suggestions> getVisualsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager());
+    }
+
+    @SuppressWarnings("unused")
+    public static CompletableFuture<Suggestions> getSchedulePresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager());
     }
 
     @Override

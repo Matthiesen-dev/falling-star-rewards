@@ -74,6 +74,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
         CONFIG_MANAGER.getEventsConfigManager().loadConfigs();
         CONFIG_MANAGER.getRewardsConfigManager().loadConfigs();
         CONFIG_MANAGER.getVisualsConfigManager().loadConfigs();
+        CONFIG_MANAGER.getSchedulesConfigManager().loadConfigs();
     }
 
     public MainConfig getMainConfig() {
@@ -129,8 +130,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
             public void onServerTick(MinecraftServer server) {
                 MainConfig config = getMainConfig();
                 if (!config.enabled) return;
-                var preset = CONFIG_MANAGER.loadRandomEventPreset();
-                RuntimeManager.tick(server, config, getAnnouncementsConfig(), preset);
+                RuntimeManager.tick(server, config, getAnnouncementsConfig());
             }
 
             @Override

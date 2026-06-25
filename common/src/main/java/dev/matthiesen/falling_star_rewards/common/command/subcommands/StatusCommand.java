@@ -51,7 +51,8 @@ public final class StatusCommand {
         builder
                 .addSection("Presets")
                 .addRow("Available Events", Integer.toString(mod.getConfigManager().calculateEventPresets()))
-                .addRow("Available Rewards", Integer.toString(mod.getConfigManager().calculateRewardPresets()));
+                .addRow("Available Rewards", Integer.toString(mod.getConfigManager().calculateRewardPresets()))
+                .addRow("Available Schedules", Integer.toString(mod.getConfigManager().calculateSchedulePresets()));
 
         if (full) {
             builder
@@ -67,9 +68,9 @@ public final class StatusCommand {
                     .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
 
                     .addSection("Scheduling")
-                    .addRow("Base Tick Interval", Integer.toString(config.scheduler.baseIntervalTicks))
-                    .addRow("Interval Jitter", Integer.toString(config.scheduler.intervalJitterTicks))
-                    .addRow("Max Stars Per Cycle", Integer.toString(config.scheduler.maxStarsPerCycle));
+                    .addRow("Enabled Schedule IDs", config.enabledSchedules == null || config.enabledSchedules.isEmpty()
+                            ? "None"
+                            : String.join(", ", config.enabledSchedules));
         }
 
         return builder.build();

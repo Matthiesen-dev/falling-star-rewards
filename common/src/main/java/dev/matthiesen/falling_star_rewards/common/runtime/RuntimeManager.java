@@ -3,6 +3,7 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import net.minecraft.server.MinecraftServer;
 
@@ -23,20 +24,45 @@ public final class RuntimeManager {
     }
 
     public static int runCycle(MinecraftServer server, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
-        return starEventService.runCycle(server, mainConfig, presetConfig, announcementsConfig, bypassActivationChecks);
+        return starEventService.runCycle(server, mainConfig, presetConfig, announcementsConfig, bypassActivationChecks, null);
     }
 
-    public static void tick(MinecraftServer server, MainConfig config, AnnouncementsConfig announcementsConfig, LoadedPreset preset) {
-        if (preset == null) {
-            FallingStarRewards.INSTANCE.createWarnLog("No event presets available to start a cycle");
+    public static void tick(MinecraftServer server, MainConfig config, AnnouncementsConfig announcementsConfig) {
+        var enabledSchedules = FallingStarRewards.CONFIG_MANAGER.resolveEnabledSchedules(config);
+        if (enabledSchedules.isEmpty()) {
             return;
         }
+
         int gameTick = server.getTickCount();
-        starEventService.onServerTick(server, preset);
-        if (orchestrator.shouldStartCycle(gameTick, config)) {
-            int spawned = starEventService.runCycle(server, config, preset, announcementsConfig);
+        LoadedPreset visualsSourcePreset = FallingStarRewards.CONFIG_MANAGER.loadRandomEventPreset();
+        if (visualsSourcePreset != null) {
+            starEventService.onServerTick(server, visualsSourcePreset);
+        }
+
+        for (var schedulePreset : enabledSchedules) {
+            String scheduleId = schedulePreset.name();
+            SchedulePresetConfig scheduleConfig = schedulePreset.config();
+
+            if (!orchestrator.shouldStartCycle(
+                    scheduleId,
+                    gameTick,
+                    scheduleConfig.baseIntervalTicks,
+                    scheduleConfig.intervalJitterTicks
+            )) {
+                continue;
+            }
+
+            LoadedPreset preset = FallingStarRewards.CONFIG_MANAGER.loadPresetForSchedule(scheduleId, scheduleConfig);
+            if (preset == null) {
+                FallingStarRewards.INSTANCE.createWarnLog("No valid event presets found for schedule: " + scheduleId);
+                continue;
+            }
+
+            int spawned = starEventService.runCycle(server, config, preset, announcementsConfig, false, scheduleConfig);
             if (spawned > 0) {
-                FallingStarRewards.INSTANCE.createInfoLog("Starting star cycle at tick " + gameTick + " (spawned=" + spawned + ")");
+                FallingStarRewards.INSTANCE.createInfoLog(
+                        "Starting star cycle at tick " + gameTick + " for schedule '" + scheduleId + "' (spawned=" + spawned + ")"
+                );
             }
         }
     }

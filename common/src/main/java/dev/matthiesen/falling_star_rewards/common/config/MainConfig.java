@@ -19,10 +19,6 @@ public final class MainConfig {
     @SerializedName("claim")
     public Claim claim = new Claim();
 
-    // TODO Remove this once the new schedules system is in place
-    @SerializedName("scheduler")
-    public Scheduler scheduler = new Scheduler();
-
     public static final class Claim {
         @SerializedName("lifeTicks")
         public int lifeTicks = 20 * 45;
@@ -34,17 +30,6 @@ public final class MainConfig {
         public int maxActiveDrops = 64;
     }
 
-    // TODO Remove this once the new schedules system is in place
-    public static final class Scheduler {
-        @SerializedName("baseIntervalTicks")
-        public int baseIntervalTicks = 20 * 120;
-
-        @SerializedName("intervalJitterTicks")
-        public int intervalJitterTicks = 20 * 30;
-
-        @SerializedName("maxStarsPerCycle")
-        public int maxStarsPerCycle = 1;
-    }
 
     @SuppressWarnings("unused")
     public static final Gson GSON = new GsonBuilder()
