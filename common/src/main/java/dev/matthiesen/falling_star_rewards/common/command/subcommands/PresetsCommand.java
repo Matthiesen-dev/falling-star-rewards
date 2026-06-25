@@ -16,6 +16,7 @@ import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionReque
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetTypes;
 import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -40,7 +41,8 @@ public final class PresetsCommand {
         return new CommandBuilder("preset")
                 .then(getPresetEventsSubCommand())
                 .then(getPresetRewardsSubCommand())
-                .then(getPresetVisualsSubCommand());
+                .then(getPresetVisualsSubCommand())
+                .then(getPresetSchedulesSubCommand());
     }
 
     public static CommandBuilder addEnableDisableCommands(
@@ -235,6 +237,24 @@ public final class PresetsCommand {
         );
     }
 
+    public static CommandBuilder getPresetSchedulesSubCommand() {
+        var builder = new CommandBuilder("schedules");
+        builder = addEnableDisableCommands(
+                builder,
+                FallingStarCommand::getSchedulePresetLists,
+                PresetsCommand::presetScheduleEnable,
+                PresetsCommand::presetScheduleDisable
+        );
+        return addGenericCommands(
+                builder,
+                FallingStarCommand::getSchedulePresetLists,
+                PresetsCommand::presetSchedulesList,
+                PresetsCommand::presetScheduleCreate,
+                PresetsCommand::presetSchedulesDelete,
+                PresetsCommand::presetSchedulesInfo
+        );
+    }
+
     public static <T> void updateConfigAndSave(ConfigFolderManager<T> manager, String preset, T config) {
         manager.setConfig(preset, config);
         manager.saveConfig(preset);
@@ -259,6 +279,11 @@ public final class PresetsCommand {
                 updateConfigAndSave(manager, preset, (T) visualsPresetConfig);
                 context.getSource().sendSystemMessage(presetEnabledState(preset, value));
             }
+            case SchedulePresetConfig schedulePresetConfig -> {
+                schedulePresetConfig.enabled = value;
+                updateConfigAndSave(manager, preset, (T) schedulePresetConfig);
+                context.getSource().sendSystemMessage(presetEnabledState(preset, value));
+            }
             default -> context.getSource().sendFailure(Component.literal("Preset not found: " + preset).withStyle(ChatFormatting.RED));
         }
     }
@@ -280,6 +305,16 @@ public final class PresetsCommand {
 
     public static int presetVisualsDisable(CommandContext<CommandSourceStack> context) {
         presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), false);
+        return 1;
+    }
+
+    public static int presetScheduleEnable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), true);
+        return 1;
+    }
+
+    public static int presetScheduleDisable(CommandContext<CommandSourceStack> context) {
+        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), false);
         return 1;
     }
 
@@ -313,6 +348,16 @@ public final class PresetsCommand {
         );
     }
 
+    public static int presetSchedulesList(CommandContext<CommandSourceStack> context) {
+        return presetList(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(),
+                "No schedule presets found.",
+                "Schedule Presets",
+                config -> config.enabled ? "Enabled" : "Disabled"
+        );
+    }
+
     @SuppressWarnings("SameReturnValue")
     public static <T> int presetList(
             CommandContext<CommandSourceStack> context,
@@ -342,6 +387,10 @@ public final class PresetsCommand {
 
     public static int presetVisualsCreate(CommandContext<CommandSourceStack> context) {
         return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), "visuals", "Visuals");
+    }
+
+    public static int presetScheduleCreate(CommandContext<CommandSourceStack> context) {
+        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), "schedule", "Schedule");
     }
 
     public static <T> int presetCreate(
@@ -445,6 +494,15 @@ public final class PresetsCommand {
         );
     }
 
+    public static int presetSchedulesInfo(CommandContext<CommandSourceStack> context) {
+        return presetInfo(
+                context,
+                FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(),
+                "schedule",
+                PresetsCommand::buildSchedulePresetInfo
+        );
+    }
+
     public static <T> int presetInfo(
             CommandContext<CommandSourceStack> context,
             ConfigFolderManager<T> manager,
@@ -469,16 +527,36 @@ public final class PresetsCommand {
                 .addRow("Enabled", Boolean.toString(config.enabled))
                 .addRow("Rewards Preset", config.rewardsPresetId)
                 .addRow("Visuals Preset", config.visualsPresetId)
-                .addSection("Activation")
-                .addRow("Require Night", Boolean.toString(config.activation.requireNight))
-                .addRow("Require Surface Access", Boolean.toString(config.activation.requireSurfaceAccess))
-                .addRow("Weather Mode", config.activation.weatherMode)
                 .addSection("Spawn")
                 .addRow("Target Scope", config.spawn.targetScope)
                 .addRow("Min Radius", Integer.toString(config.spawn.minRadius))
                 .addRow("Max Radius", Integer.toString(config.spawn.maxRadius))
                 .addRow("Max Location Attempts", Integer.toString(config.spawn.maxLocationAttempts))
                 .addRow("Allow Water Spawns", Boolean.toString(config.spawn.allowWaterSpawns))
+                .build();
+    }
+
+    public static Component buildSchedulePresetInfo(NamedPreset<SchedulePresetConfig> preset) {
+        SchedulePresetConfig config = preset.config();
+        SchedulePresetConfig.Conditions conditions = config.conditions == null ? new SchedulePresetConfig.Conditions() : config.conditions;
+        SchedulePresetConfig.State state = config.state == null ? new SchedulePresetConfig.State() : config.state;
+        return new ChatTableBuilder("Schedule Preset: " + preset.name())
+                .addSection("General")
+                .addRow("Enabled", Boolean.toString(config.enabled))
+                .addRow("Base Tick Interval", Integer.toString(config.baseIntervalTicks))
+                .addRow("Interval Jitter", Integer.toString(config.intervalJitterTicks))
+                .addRow("Max Stars Per Cycle", Integer.toString(config.maxStarsPerCycle))
+                .addRow("Selection Mode", config.selectionMode)
+                .addRow("Event Entries", Integer.toString(config.eventEntries == null ? 0 : config.eventEntries.size()))
+                .addSection("Conditions")
+                .addRow("Time Mode", conditions.timeMode)
+                .addRow("Require Surface Access", Boolean.toString(conditions.requireSurfaceAccess))
+                .addRow("Weather Mode", conditions.weatherMode)
+                .addRow("Moon Phases", conditions.moonPhases == null || conditions.moonPhases.isEmpty()
+                        ? "Any"
+                        : String.join(", ", conditions.moonPhases))
+                .addSection("State")
+                .addRow("Rotation Cursor", Integer.toString(state.rotationCursor))
                 .build();
     }
 
@@ -726,6 +804,10 @@ public final class PresetsCommand {
 
     public static int presetVisualsDelete(CommandContext<CommandSourceStack> context) {
         return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), PresetTypes.VISUALS, "visuals");
+    }
+
+    public static int presetSchedulesDelete(CommandContext<CommandSourceStack> context) {
+        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), PresetTypes.SCHEDULE, "schedule");
     }
 
     public static <T> int presetDelete(

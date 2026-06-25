@@ -43,6 +43,7 @@ public final class ConfirmDeleteCommand {
             case EVENT -> FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
             case REWARDS -> FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
             case VISUALS -> FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager();
+            case SCHEDULE -> FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager();
         };
 
         // Delete the preset

@@ -4,6 +4,7 @@ import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
@@ -37,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -107,18 +109,21 @@ public final class StarEventService {
         return removed;
     }
 
-    public int runCycle(MinecraftServer server, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig) {
-        return runCycle(server, mainConfig, presetConfig, announcementsConfig, false);
-    }
-
-    public int runCycle(MinecraftServer server, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig, boolean bypassActivationChecks) {
-        int cappedMaxStars = Math.max(1, mainConfig.scheduler.maxStarsPerCycle);
+    public int runCycle(
+            MinecraftServer server,
+            MainConfig mainConfig,
+            LoadedPreset presetConfig,
+            AnnouncementsConfig announcementsConfig,
+            boolean bypassActivationChecks,
+            SchedulePresetConfig scheduleConfig
+    ) {
+        int cappedMaxStars = scheduleConfig == null ? 1 : Math.max(1, scheduleConfig.maxStarsPerCycle);
         int maxActiveDrops = Math.max(1, mainConfig.claim.maxActiveDrops);
         if (activeDrops.size() >= maxActiveDrops) {
             return 0;
         }
 
-        List<ServerPlayer> eligiblePlayers = collectEligiblePlayers(server, presetConfig, bypassActivationChecks);
+        List<ServerPlayer> eligiblePlayers = collectEligiblePlayers(server, scheduleConfig, bypassActivationChecks);
         if (eligiblePlayers.isEmpty()) {
             return 0;
         }
@@ -148,10 +153,10 @@ public final class StarEventService {
         return spawned;
     }
 
-    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, LoadedPreset presetConfig, boolean bypassActivationChecks) {
+    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, SchedulePresetConfig scheduleConfig, boolean bypassActivationChecks) {
         List<ServerPlayer> eligible = new ArrayList<>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (isPlayerEligible(player, presetConfig, bypassActivationChecks)) {
+            if (isPlayerEligible(player, scheduleConfig, bypassActivationChecks)) {
                 eligible.add(player);
             }
         }
@@ -159,22 +164,30 @@ public final class StarEventService {
         return eligible;
     }
 
-    private boolean isPlayerEligible(ServerPlayer player, LoadedPreset presetConfig, boolean bypassActivationChecks) {
+    private boolean isPlayerEligible(ServerPlayer player, SchedulePresetConfig scheduleConfig, boolean bypassActivationChecks) {
         ServerLevel level = player.serverLevel();
 
-        if (bypassActivationChecks) {
+        if (bypassActivationChecks || scheduleConfig == null) {
             return true;
         }
 
-        if (presetConfig.eventConfig.activation.requireNight && !level.isNight()) {
+        SchedulePresetConfig.Conditions conditions = scheduleConfig.conditions == null
+                ? new SchedulePresetConfig.Conditions()
+                : scheduleConfig.conditions;
+
+        if (!isTimeEligible(level, conditions.timeMode)) {
             return false;
         }
 
-        if (!isWeatherEligible(level, presetConfig.eventConfig.activation.weatherMode)) {
+        if (!isWeatherEligible(level, conditions.weatherMode)) {
             return false;
         }
 
-        return !presetConfig.eventConfig.activation.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
+        if (!isMoonPhaseEligible(level, conditions.moonPhases)) {
+            return false;
+        }
+
+        return !conditions.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
     private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig) {
@@ -266,6 +279,59 @@ public final class StarEventService {
             case "rain" -> level.isRaining() && !level.isThundering();
             case "thunder" -> level.isThundering();
             default -> true;
+        };
+    }
+
+    private boolean isTimeEligible(ServerLevel level, String timeMode) {
+        String mode = timeMode == null ? "any" : timeMode.toLowerCase(Locale.ROOT);
+        return switch (mode) {
+            case "day" -> level.isDay();
+            case "night" -> level.isNight();
+            default -> true;
+        };
+    }
+
+    private boolean isMoonPhaseEligible(ServerLevel level, List<String> configuredPhases) {
+        if (configuredPhases == null || configuredPhases.isEmpty()) {
+            return true;
+        }
+
+        int currentMoonPhase = level.getMoonPhase();
+        Set<Integer> acceptedPhases = configuredPhases.stream()
+                .map(this::parseMoonPhase)
+                .filter(phase -> phase >= 0)
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (acceptedPhases.isEmpty()) {
+            return true;
+        }
+
+        return acceptedPhases.contains(currentMoonPhase);
+    }
+
+    private int parseMoonPhase(String value) {
+        if (value == null || value.isBlank()) {
+            return -1;
+        }
+
+        String normalized = value.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        try {
+            int parsed = Integer.parseInt(normalized);
+            return parsed >= 0 && parsed <= 7 ? parsed : -1;
+        } catch (NumberFormatException ignored) {
+            // Fall through to named parsing.
+        }
+
+        return switch (normalized) {
+            case "full", "full_moon" -> 0;
+            case "waning_gibbous" -> 1;
+            case "third_quarter", "last_quarter" -> 2;
+            case "waning_crescent" -> 3;
+            case "new", "new_moon" -> 4;
+            case "waxing_crescent" -> 5;
+            case "first_quarter" -> 6;
+            case "waxing_gibbous" -> 7;
+            default -> -1;
         };
     }
 

@@ -14,22 +14,9 @@ public final class EventPresetConfig {
     @SerializedName("visualsPresetId")
     public String visualsPresetId = "base";
 
-    @SerializedName("activation")
-    public Activation activation = new Activation();
-
     @SerializedName("spawn")
     public Spawn spawn = new Spawn();
 
-    public static final class Activation {
-        @SerializedName("requireNight")
-        public boolean requireNight = true;
-
-        @SerializedName("requireSurfaceAccess")
-        public boolean requireSurfaceAccess = true;
-
-        @SerializedName("weatherMode")
-        public String weatherMode = "any";
-    }
 
     public static final class Spawn {
         @SerializedName("targetScope")

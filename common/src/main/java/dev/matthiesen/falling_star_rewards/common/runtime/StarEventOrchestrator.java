@@ -1,36 +1,40 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
-
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Holds server-side timing state for future star event spawning.
- * Platform layers should call {@link #shouldStartCycle(long, MainConfig)} every server tick.
+ * Platform layers should call {@link #shouldStartCycle(String, long, int, int)} for each enabled schedule every tick.
  */
 public final class StarEventOrchestrator {
-    private long nextCycleTick = 0L;
+    private final Map<String, Long> nextCycleBySchedule = new HashMap<>();
 
-    public boolean shouldStartCycle(long currentTick, MainConfig config) {
-        if (!config.enabled) {
-            return false;
-        }
-
+    public boolean shouldStartCycle(String scheduleId, long currentTick, int baseIntervalTicks, int intervalJitterTicks) {
+        long nextCycleTick = nextCycleBySchedule.getOrDefault(scheduleId, 0L);
         if (currentTick < nextCycleTick) {
             return false;
         }
 
-        nextCycleTick = currentTick + calculateNextInterval(config);
+        nextCycleBySchedule.put(scheduleId, currentTick + calculateNextInterval(baseIntervalTicks, intervalJitterTicks));
         return true;
     }
 
     public long getNextCycleTick() {
-        return nextCycleTick;
+        if (nextCycleBySchedule.isEmpty()) {
+            return 0L;
+        }
+        long min = Long.MAX_VALUE;
+        for (long value : nextCycleBySchedule.values()) {
+            min = Math.min(min, value);
+        }
+        return min == Long.MAX_VALUE ? 0L : min;
     }
 
-    private long calculateNextInterval(MainConfig config) {
-        int base = Math.max(20, config.scheduler.baseIntervalTicks);
-        int jitter = Math.max(0, config.scheduler.intervalJitterTicks);
+    private long calculateNextInterval(int baseIntervalTicks, int intervalJitterTicks) {
+        int base = Math.max(20, baseIntervalTicks);
+        int jitter = Math.max(0, intervalJitterTicks);
         if (jitter == 0) {
             return base;
         }
