@@ -60,7 +60,7 @@ public final class StarEventService {
             ActiveStarDrop activeDrop = entry.getValue();
             Entity entity = resolveTrackedEntity(server, activeDrop, entityId);
 
-            if (entity == null || !entity.isAlive()) {
+            if (entity == null || !entity.isAlive() || entity.isRemoved()) {
                 toRemove.add(entityId);
                 continue;
             }
@@ -99,7 +99,7 @@ public final class StarEventService {
             }
 
             Entity entity = resolveTrackedEntity(server, activeDrop, entityId);
-            if (entity != null && entity.isAlive()) {
+            if (entity != null && entity.isAlive() && !entity.isRemoved()) {
                 entity.discard();
             }
             removed++;
