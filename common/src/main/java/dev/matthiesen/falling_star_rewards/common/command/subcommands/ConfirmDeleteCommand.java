@@ -39,15 +39,7 @@ public final class ConfirmDeleteCommand {
         }
 
         // Get the appropriate manager based on the preset type
-        ConfigFolderManager<?> manager = switch (request.presetType()) {
-            case EVENT -> FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
-            case REWARDS -> FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
-            case VISUALS -> FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager();
-            case SCHEDULE -> FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager();
-        };
-
-        // Delete the preset
-        boolean deleted = manager.deleteConfig(request.presetName());
+        boolean deleted = isDeleted(request);
 
         String presetType = request.presetType().name().toLowerCase(Locale.ROOT);
         if (deleted) {
@@ -61,5 +53,17 @@ public final class ConfirmDeleteCommand {
             );
             return 0;
         }
+    }
+
+    private static boolean isDeleted(PresetDeletionRequest request) {
+        ConfigFolderManager<?> manager = switch (request.presetType()) {
+            case EVENT -> FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
+            case REWARDS -> FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
+            case VISUALS -> FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager();
+            case SCHEDULE -> FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager();
+        };
+
+        // Delete the preset
+        return manager.deleteConfig(request.presetName());
     }
 }

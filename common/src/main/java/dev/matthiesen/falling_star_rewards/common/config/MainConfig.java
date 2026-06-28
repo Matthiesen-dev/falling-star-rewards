@@ -30,7 +30,6 @@ public final class MainConfig {
         public int maxActiveDrops = 64;
     }
 
-
     @SuppressWarnings("unused")
     public static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()

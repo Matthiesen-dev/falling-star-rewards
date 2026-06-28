@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public final class EventPresetConfig {
     @SerializedName("enabled")
     public boolean enabled = true;
@@ -17,6 +19,8 @@ public final class EventPresetConfig {
     @SerializedName("spawn")
     public Spawn spawn = new Spawn();
 
+    @SerializedName("announcement")
+    public Announcement announcement = new Announcement();
 
     public static final class Spawn {
         @SerializedName("targetScope")
@@ -33,6 +37,23 @@ public final class EventPresetConfig {
 
         @SerializedName("allowWaterSpawns")
         public boolean allowWaterSpawns = false;
+    }
+
+    public static final class Announcement {
+        @SerializedName("enabled")
+        public boolean enabled = true;
+
+        @SerializedName("scope")
+        public String scope = "nearby";
+
+        @SerializedName("useActionBar")
+        public boolean useActionBar = false;
+
+        public List<String> messages = List.of(
+                "A falling star has appeared nearby!",
+                "A falling star has appeared in the sky!",
+                "A falling star has appeared in the world!"
+        );
     }
 
     @SuppressWarnings("unused")

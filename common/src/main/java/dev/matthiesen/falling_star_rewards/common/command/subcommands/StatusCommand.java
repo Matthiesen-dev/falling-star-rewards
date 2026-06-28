@@ -34,7 +34,6 @@ public final class StatusCommand {
     private static Component buildStatusTable(boolean full) {
         var mod = FallingStarRewards.INSTANCE;
         var config = mod.getMainConfig();
-        var announcementsConfig = mod.getAnnouncementsConfig();
 
         ChatTableBuilder builder = new ChatTableBuilder(
                 full ? "Falling Star Rewards Status (Full)" : "Falling Star Rewards Status"
@@ -56,12 +55,6 @@ public final class StatusCommand {
 
         if (full) {
             builder
-                    .addSection("Announcements")
-                    .addRow("Enabled", Boolean.toString(announcementsConfig.enabled))
-                    .addRow("Scope", announcementsConfig.scope)
-                    .addRow("Use Action Bar Overlay", Boolean.toString(announcementsConfig.useActionBar))
-                    .addRow("Message", announcementsConfig.spawnMessage)
-
                     .addSection("Claim")
                     .addRow("Life Ticks", Integer.toString(config.claim.lifeTicks))
                     .addRow("Pickup Delay Ticks", Integer.toString(config.claim.pickupDelayTicks))

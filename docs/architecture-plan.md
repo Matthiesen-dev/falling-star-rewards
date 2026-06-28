@@ -27,12 +27,14 @@
 3. If a schedule cycle starts, runtime chooses one event preset (`random`, `weighted`, or `rotation`) and then picks eligible target players/worlds (depending on scope).
 4. For each target, runtime finds a safe nearby location within configured radius.
 5. Mod spawns an item marker or reward payload and schedules cleanup.
-6. Optional announcement is sent to nearby players or globally.
+6. Optional announcement is sent from the selected event preset to nearby players or globally.
 
 ## Breaking Change (Beta)
 - Legacy `config.scheduler` and event `activation` fields have been hard-removed.
 - All activation logic now lives inside schedule presets under `/config/falling_star_rewards/schedules/*.json`.
 - `config.enabledSchedules` controls which schedules are active.
+- Legacy `/config/falling_star_rewards/announcements.json` has been removed.
+- Announcement behavior now lives in each event preset under `announcement`.
 
 ## Planned Common Services
 - `StarEventOrchestrator`
@@ -52,11 +54,6 @@ Current implementation note: active item drops are tracked and explicitly discar
 
 - `enabled`: master switch.
 - `enabledSchedules`: list of active schedule preset IDs.
-- `spawn`
-  - `targetScope`: `per_player | global`.
-  - `minRadius`, `maxRadius`: distance from target player.
-  - `maxLocationAttempts`: attempts to find safe spawn location.
-  - `allowWaterSpawns`: whether liquid blocks are valid spawn points.
 - `claim`
   - `lifeTicks`: despawn timer for spawned stars.
   - `pickupDelayTicks`: delay before pickup is allowed.
@@ -65,7 +62,37 @@ Current implementation note: active item drops are tracked and explicitly discar
 ```json
 {
   "enabled": true,
+  "enablePresetGeneration": true,
   "enabledSchedules": ["base"],
+  "claim": {
+    "lifeTicks": 900,
+    "pickupDelayTicks": 10,
+    "maxActiveDrops": 64
+  }
+}
+```
+
+### `/config/falling_star_rewards/events/<id>.json` - Event preset file.
+
+- `enabled`: toggles this event preset.
+- `rewardsPresetId`: reward preset ID to use for this event.
+- `visualsPresetId`: visuals preset ID to use for this event.
+- `spawn`
+  - `targetScope`: `per_player | global`.
+  - `minRadius`, `maxRadius`: distance from target player.
+  - `maxLocationAttempts`: attempts to find safe spawn location.
+  - `allowWaterSpawns`: whether liquid blocks are valid spawn points.
+- `announcement`
+  - `enabled`: toggles spawn announcement for this event preset.
+  - `scope`: `nearby | global`.
+  - `useActionBar`: whether to send as overlay/action bar instead of chat line.
+  - `messages[]`: message pool; one message is selected randomly per spawn.
+
+```json
+{
+  "enabled": true,
+  "rewardsPresetId": "base",
+  "visualsPresetId": "base",
   "spawn": {
     "targetScope": "per_player",
     "minRadius": 16,
@@ -73,10 +100,15 @@ Current implementation note: active item drops are tracked and explicitly discar
     "maxLocationAttempts": 12,
     "allowWaterSpawns": false
   },
-  "claim": {
-    "lifeTicks": 900,
-    "pickupDelayTicks": 10,
-    "maxActiveDrops": 64
+  "announcement": {
+    "enabled": true,
+    "scope": "nearby",
+    "useActionBar": false,
+    "messages": [
+      "A falling star has appeared nearby!",
+      "A falling star has appeared in the sky!",
+      "A falling star has appeared in the world!"
+    ]
   }
 }
 ```
@@ -122,19 +154,6 @@ Current implementation note: active item drops are tracked and explicitly discar
 }
 ```
 
-### `/config/falling_star_rewards/announcements.json` - Announcement configs
-
-- `enabled`: show spawn message.
-- `scope`: `nearby | global`.
-- `spawnMessage`: chat message on spawn.
-
-```json
-{
-    "enabled": true,
-    "scope": "nearby",
-    "spawnMessage": "A falling star has appeared nearby!"
-}
-```
 
 ### `/config/falling_star_rewards/rewards.json` - Reward pool configs
 

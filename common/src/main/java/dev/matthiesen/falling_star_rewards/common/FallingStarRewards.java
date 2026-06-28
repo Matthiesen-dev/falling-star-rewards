@@ -5,7 +5,6 @@ import dev.matthiesen.common.matthiesen_lib_api.core.interfaces.MatthiesenLibSer
 import dev.matthiesen.common.matthiesen_lib_api.permission.Permission;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
-import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.config.PermissionsConfig;
 import dev.matthiesen.falling_star_rewards.common.registry.PermissionRegistry;
@@ -70,7 +69,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
     public void loadConfigs() {
         CONFIG_MANAGER.getMainConfigManager().loadConfig();
-        CONFIG_MANAGER.getAnnouncementsConfigManager().loadConfig();
         CONFIG_MANAGER.getEventsConfigManager().loadConfigs();
         CONFIG_MANAGER.getRewardsConfigManager().loadConfigs();
         CONFIG_MANAGER.getVisualsConfigManager().loadConfigs();
@@ -79,10 +77,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
     public MainConfig getMainConfig() {
         return CONFIG_MANAGER.getMainConfigManager().getConfig();
-    }
-
-    public AnnouncementsConfig getAnnouncementsConfig() {
-        return CONFIG_MANAGER.getAnnouncementsConfigManager().getConfig();
     }
 
     public PermissionsConfig getPermissionsConfig() {
@@ -116,7 +110,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
             createWarnLog("No event presets available to start a cycle");
             return 0;
         }
-        return RuntimeManager.runCycle(server, config, preset, getAnnouncementsConfig(), bypassActivationChecks);
+        return RuntimeManager.runCycle(server, config, preset, bypassActivationChecks);
     }
 
     public MatthiesenLibServerEventHandler getServerEventHandler() {
@@ -130,7 +124,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
             public void onServerTick(MinecraftServer server) {
                 MainConfig config = getMainConfig();
                 if (!config.enabled) return;
-                RuntimeManager.tick(server, config, getAnnouncementsConfig());
+                RuntimeManager.tick(server, config);
             }
 
             @Override

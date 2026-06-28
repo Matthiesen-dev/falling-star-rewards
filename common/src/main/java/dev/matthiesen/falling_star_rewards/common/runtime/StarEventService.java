@@ -1,6 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import dev.matthiesen.falling_star_rewards.common.config.AnnouncementsConfig;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
@@ -113,7 +112,6 @@ public final class StarEventService {
             MinecraftServer server,
             MainConfig mainConfig,
             LoadedPreset presetConfig,
-            AnnouncementsConfig announcementsConfig,
             boolean bypassActivationChecks,
             SchedulePresetConfig scheduleConfig
     ) {
@@ -141,7 +139,7 @@ public final class StarEventService {
                 break;
             }
 
-            if (spawnStarNearPlayer(player, mainConfig, presetConfig, announcementsConfig)) {
+            if (spawnStarNearPlayer(player, mainConfig, presetConfig)) {
                 spawned++;
             }
 
@@ -190,7 +188,7 @@ public final class StarEventService {
         return !conditions.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
-    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, LoadedPreset presetConfig, AnnouncementsConfig announcementsConfig) {
+    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, LoadedPreset presetConfig) {
         ServerLevel level = player.serverLevel();
         int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn.maxLocationAttempts);
 
@@ -231,7 +229,7 @@ public final class StarEventService {
             );
             emitImpactBurst(level, spawnPos, presetConfig.visualsConfig);
             emitImpactSound(level, spawnPos, presetConfig.visualsConfig);
-            announceSpawn(player, presetConfig, announcementsConfig);
+            announceSpawn(player, presetConfig);
             return true;
         }
 
@@ -339,21 +337,29 @@ public final class StarEventService {
         return "global".equalsIgnoreCase(config.eventConfig.spawn.targetScope);
     }
 
-    private void announceSpawn(ServerPlayer sourcePlayer, LoadedPreset config, AnnouncementsConfig announcementsConfig) {
-        if (!announcementsConfig.enabled || announcementsConfig.spawnMessage == null
-                || announcementsConfig.spawnMessage.isBlank()) {
+    private String pickString(List<String> stringList) {
+        if (stringList == null || stringList.isEmpty()) {
+            return null;
+        }
+        int index = ThreadLocalRandom.current().nextInt(stringList.size());
+        return stringList.get(index);
+    }
+
+    private void announceSpawn(ServerPlayer sourcePlayer, LoadedPreset config) {
+        if (!config.eventConfig.announcement.enabled || config.eventConfig.announcement.messages.isEmpty()) {
             return;
         }
 
-        var useActionBarOverlay = announcementsConfig.useActionBar;
+        var useActionBarOverlay = config.eventConfig.announcement.useActionBar;
 
         MinecraftServer server = sourcePlayer.getServer();
         if (server == null) {
             return;
         }
 
-        Component message = Component.literal(announcementsConfig.spawnMessage).withStyle(ChatFormatting.AQUA);
-        if ("global".equalsIgnoreCase(announcementsConfig.scope)) {
+        String rawMessage = pickString(config.eventConfig.announcement.messages);
+        Component message = Component.literal(rawMessage).withStyle(ChatFormatting.AQUA);
+        if ("global".equalsIgnoreCase(config.eventConfig.announcement.scope)) {
             server.getPlayerList().broadcastSystemMessage(message, useActionBarOverlay);
             return;
         }
