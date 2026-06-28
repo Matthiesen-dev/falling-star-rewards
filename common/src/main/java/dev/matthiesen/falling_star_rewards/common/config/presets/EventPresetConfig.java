@@ -16,6 +16,9 @@ public final class EventPresetConfig {
     @SerializedName("visualsPresetId")
     public String visualsPresetId = "base";
 
+    @SerializedName("commands")
+    public List<String> commands = List.of();
+
     @SerializedName("spawn")
     public Spawn spawn = new Spawn();
 

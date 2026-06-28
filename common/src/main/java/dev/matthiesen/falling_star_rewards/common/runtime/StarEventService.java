@@ -1,11 +1,13 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import dev.matthiesen.common.matthiesen_lib_api.utility.RunSlashCommand;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
+import dev.matthiesen.falling_star_rewards.common.interfaces.EventCommandContext;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
 import net.minecraft.ChatFormatting;
@@ -212,6 +214,14 @@ public final class StarEventService {
             if (!applyRewardCustomization(stack, rolledReward)) {
                 continue;
             }
+
+            EventCommandContext commandContext = new EventCommandContext(
+                    presetConfig,
+                    player,
+                    spawnPos,
+                    stack
+            );
+
             ItemEntity itemEntity = new ItemEntity(
                     level,
                     spawnPos.getX() + 0.5,
@@ -230,10 +240,26 @@ public final class StarEventService {
             emitImpactBurst(level, spawnPos, presetConfig.visualsConfig);
             emitImpactSound(level, spawnPos, presetConfig.visualsConfig);
             announceSpawn(player, presetConfig);
+            runEventCommands(commandContext);
+
             return true;
         }
 
         return false;
+    }
+
+    private void runEventCommands(EventCommandContext context) {
+        var server = FallingStarRewards.INSTANCE.getMinecraftServer();
+        if (server == null) return;
+
+        var commandList = context.presetConfig().eventConfig.commands;
+        if (commandList.isEmpty()) return;
+
+        for (String command : commandList) {
+            String normalizedCommand = context.ensureNoPreSlash(command);
+            String processedCommand = context.processPlaceholders(normalizedCommand);
+            RunSlashCommand.asServer(server, processedCommand);
+        }
     }
 
     private BlockPos pickSpawnPosition(ServerPlayer player, LoadedPreset config) {

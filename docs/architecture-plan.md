@@ -28,6 +28,14 @@
 4. For each target, runtime finds a safe nearby location within configured radius.
 5. Mod spawns an item marker or reward payload and schedules cleanup.
 6. Optional announcement is sent from the selected event preset to nearby players or globally.
+7. Optional event commands are executed as server commands after a successful spawn.
+
+## Event Preset Commands
+- Event presets now support a `commands[]` list for post-spawn automation.
+- Each command is normalized to remove a leading `/` (if present) before execution.
+- Commands run as the dedicated server command source (`RunSlashCommand.asServer`).
+- Placeholder expansion is currently supported for `%nearbyPlayer%`, `%spawnPos%`, and `%rewardItem%`.
+- Command execution is tied to successful spawn completion in `StarEventService`.
 
 ## Breaking Change (Beta)
 - Legacy `config.scheduler` and event `activation` fields have been hard-removed.
@@ -77,6 +85,9 @@ Current implementation note: active item drops are tracked and explicitly discar
 - `enabled`: toggles this event preset.
 - `rewardsPresetId`: reward preset ID to use for this event.
 - `visualsPresetId`: visuals preset ID to use for this event.
+- `commands[]`: optional server commands to run after a successful spawn.
+  - Leading `/` is optional.
+  - Supports `%nearbyPlayer%`, `%spawnPos%`, and `%rewardItem%` placeholders.
 - `spawn`
   - `targetScope`: `per_player | global`.
   - `minRadius`, `maxRadius`: distance from target player.
@@ -93,6 +104,10 @@ Current implementation note: active item drops are tracked and explicitly discar
   "enabled": true,
   "rewardsPresetId": "base",
   "visualsPresetId": "base",
+  "commands": [
+    "tellraw %nearbyPlayer% {\"text\":\"A star landed at %spawnPos% with %rewardItem%!\",\"color\":\"gold\"}",
+    "playsound minecraft:entity.experience_orb.pickup player %nearbyPlayer%"
+  ],
   "spawn": {
     "targetScope": "per_player",
     "minRadius": 16,
