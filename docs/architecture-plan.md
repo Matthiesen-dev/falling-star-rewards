@@ -30,7 +30,7 @@
 6. Optional announcement is sent from the selected event preset to nearby players or globally.
 7. Optional event commands are executed as server commands after a successful spawn.
 
-## Pending Git Changes (Unreleased)
+## Event Preset Commands
 - Event presets now support a `commands[]` list for post-spawn automation.
 - Each command is normalized to remove a leading `/` (if present) before execution.
 - Commands run as the dedicated server command source (`RunSlashCommand.asServer`).
