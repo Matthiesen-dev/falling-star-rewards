@@ -1,7 +1,6 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.matthiesen.common.matthiesen_lib_api.utility.RunSlashCommand;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
@@ -10,6 +9,7 @@ import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
 import dev.matthiesen.falling_star_rewards.common.interfaces.EventCommandContext;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
+import dev.matthiesen.matthiesen_core.common.utility.commands.RunSlashCommand;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -249,16 +249,13 @@ public final class StarEventService {
     }
 
     private void runEventCommands(EventCommandContext context) {
-        var server = FallingStarRewards.INSTANCE.getMinecraftServer();
-        if (server == null) return;
-
         var commandList = context.presetConfig().eventConfig.commands;
         if (commandList.isEmpty()) return;
 
         for (String command : commandList) {
             String normalizedCommand = context.ensureNoPreSlash(command);
             String processedCommand = context.processPlaceholders(normalizedCommand);
-            RunSlashCommand.asServer(server, processedCommand);
+            RunSlashCommand.asServer(processedCommand);
         }
     }
 

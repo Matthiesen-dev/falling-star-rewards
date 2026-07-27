@@ -1,9 +1,9 @@
 package dev.matthiesen.falling_star_rewards.common.command.subcommands;
 
 import com.mojang.brigadier.context.CommandContext;
-import dev.matthiesen.common.matthiesen_lib_api.utility.ChatTableBuilder;
-import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.matthiesen_core.common.utility.chat.ChatTableBuilder;
+import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 

@@ -1,7 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common.config;
 
-import dev.matthiesen.common.matthiesen_lib_api.config.ConfigFolderManager;
-import dev.matthiesen.common.matthiesen_lib_api.config.ConfigManager;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
@@ -10,6 +8,8 @@ import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetCo
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.NamedPreset;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
+import dev.matthiesen.matthiesen_core.common.utility.config.ConfigFolderManager;
+import dev.matthiesen.matthiesen_core.common.utility.config.ConfigManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

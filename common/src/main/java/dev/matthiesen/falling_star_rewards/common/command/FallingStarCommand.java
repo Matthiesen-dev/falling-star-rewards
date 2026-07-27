@@ -4,12 +4,12 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import dev.matthiesen.common.matthiesen_lib_api.command.AbstractCommand;
-import dev.matthiesen.common.matthiesen_lib_api.config.ConfigFolderManager;
-import dev.matthiesen.common.matthiesen_lib_api.utility.CommandBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
 import dev.matthiesen.falling_star_rewards.common.command.subcommands.*;
+import dev.matthiesen.matthiesen_core.common.api.command.CoreCommand;
+import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
+import dev.matthiesen.matthiesen_core.common.utility.config.ConfigFolderManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -49,7 +49,7 @@ import java.util.concurrent.CompletableFuture;
  *     N/A
  *</pre>
  */
-public final class FallingStarCommand extends AbstractCommand {
+public final class FallingStarCommand implements CoreCommand {
     public static final FallingStarCommand CMD = new FallingStarCommand();
     private static final Map<String, PresetDeletionRequest> DELETION_REQUESTS = new LinkedHashMap<>();
     private static final long DELETION_REQUEST_TTL_MS = 5L * 60L * 1000L;
@@ -130,11 +130,6 @@ public final class FallingStarCommand extends AbstractCommand {
                         FallingStarRewards.getPermissions().COMMAND_FALLINGSTAR_CLEANUP
                 ))
                 .executes(this::cleanup);
-    }
-
-    @Override
-    public int action(CommandContext<CommandSourceStack> context) {
-        return 0;
     }
 
     public int reload(CommandContext<CommandSourceStack> context) {

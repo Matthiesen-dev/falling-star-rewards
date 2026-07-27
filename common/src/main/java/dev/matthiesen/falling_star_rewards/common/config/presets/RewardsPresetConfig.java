@@ -1,7 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common.config.presets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 public final class RewardsPresetConfig {
@@ -49,10 +47,4 @@ public final class RewardsPresetConfig {
             this.customData = customData;
         }
     }
-
-    @SuppressWarnings("unused")
-    public static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()
-            .setPrettyPrinting()
-            .create();
 }

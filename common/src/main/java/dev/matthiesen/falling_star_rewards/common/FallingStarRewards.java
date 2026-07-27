@@ -1,8 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common;
 
-import dev.matthiesen.common.matthiesen_lib_api.abstracts.AbstractCommonMod;
-import dev.matthiesen.common.matthiesen_lib_api.core.interfaces.MatthiesenLibServerEventHandler;
-import dev.matthiesen.common.matthiesen_lib_api.permission.Permission;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
 import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
@@ -10,6 +7,9 @@ import dev.matthiesen.falling_star_rewards.common.config.PermissionsConfig;
 import dev.matthiesen.falling_star_rewards.common.registry.PermissionRegistry;
 import dev.matthiesen.falling_star_rewards.common.runtime.RuntimeManager;
 import dev.matthiesen.libs.faststats.Token;
+import dev.matthiesen.matthiesen_core.common.AbstractCommonMod;
+import dev.matthiesen.matthiesen_core.common.api.events.PlatformEvents;
+import dev.matthiesen.matthiesen_core.common.api.permissions.Permission;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
@@ -47,8 +47,17 @@ public final class FallingStarRewards extends AbstractCommonMod {
 
         reload().run();
         PermissionRegistry.init();
-        registerServerEventHandler(getServerEventHandler());
-        registerCommand(FallingStarCommand.CMD);
+
+        getCommandsRegistryManager().registerCommand(FallingStarCommand.CMD);
+
+        PlatformEvents.SERVER_RELOAD.subscribe(event -> reload().run());
+
+        PlatformEvents.SERVER_END_TICK.subscribe(event -> {
+            MainConfig config = getMainConfig();
+            if (!config.enabled) return;
+            RuntimeManager.tick(event.server(), config);
+        });
+
         createInfoLog("Initializing Falling Star Rewards");
     }
 
@@ -57,7 +66,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return METRICS_TOKEN;
     }
 
-    @Override
     public Runnable reload() {
         return () -> {
             loadConfigs();
@@ -111,27 +119,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
             return 0;
         }
         return RuntimeManager.runCycle(server, config, preset, bypassActivationChecks);
-    }
-
-    public MatthiesenLibServerEventHandler getServerEventHandler() {
-        return new MatthiesenLibServerEventHandler() {
-            @Override
-            public void onServerStart(MinecraftServer server) {
-                createInfoLog("Server Started");
-            }
-
-            @Override
-            public void onServerTick(MinecraftServer server) {
-                MainConfig config = getMainConfig();
-                if (!config.enabled) return;
-                RuntimeManager.tick(server, config);
-            }
-
-            @Override
-            public void onServerStop(MinecraftServer server) {
-                createInfoLog("Server Stopped");
-            }
-        };
     }
 
     public void createWarnLog(String message) {
