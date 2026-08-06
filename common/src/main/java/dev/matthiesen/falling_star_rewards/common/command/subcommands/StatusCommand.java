@@ -2,6 +2,7 @@ package dev.matthiesen.falling_star_rewards.common.command.subcommands;
 
 import com.mojang.brigadier.context.CommandContext;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.matthiesen_core.common.utility.chat.ChatTableBuilder;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
 import net.minecraft.commands.CommandSourceStack;
@@ -33,18 +34,18 @@ public final class StatusCommand {
 
     private static Component buildStatusTable(boolean full) {
         var mod = FallingStarRewards.INSTANCE;
-        var config = mod.getMainConfig();
+        var config = FSConfig.SERVER_CONFIG;
 
         ChatTableBuilder builder = new ChatTableBuilder(
                 full ? "Falling Star Rewards Status (Full)" : "Falling Star Rewards Status"
         )
                 .addSection("Runtime")
-                .addRow("Enabled", Boolean.toString(config.enabled))
+                .addRow("Enabled", Boolean.toString(config.enabled.getAsBoolean()))
                 .addRow("Next Cycle Tick", Long.toString(mod.getNextCycleTick()))
                 .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()));
 
         if (full) {
-            builder.addRow("Preset Generation Enabled", Boolean.toString(config.enablePresetGeneration));
+            builder.addRow("Preset Generation Enabled", Boolean.toString(config.enablePresetGeneration.getAsBoolean()));
         }
 
         builder
@@ -56,14 +57,14 @@ public final class StatusCommand {
         if (full) {
             builder
                     .addSection("Claim")
-                    .addRow("Life Ticks", Integer.toString(config.claim.lifeTicks))
-                    .addRow("Pickup Delay Ticks", Integer.toString(config.claim.pickupDelayTicks))
-                    .addRow("Max Active Drops", Integer.toString(config.claim.maxActiveDrops))
+                    .addRow("Life Ticks", Integer.toString(config.claim_lifeTicks.getAsInt()))
+                    .addRow("Pickup Delay Ticks", Integer.toString(config.claim_pickupDelayTicks.getAsInt()))
+                    .addRow("Max Active Drops", Integer.toString(config.claim_maxActiveDrops.getAsInt()))
 
                     .addSection("Scheduling")
-                    .addRow("Enabled Schedule IDs", config.enabledSchedules == null || config.enabledSchedules.isEmpty()
+                    .addRow("Enabled Schedule IDs", config.enabledSchedules.get() == null || config.enabledSchedules.get().isEmpty()
                             ? "None"
-                            : String.join(", ", config.enabledSchedules));
+                            : String.join(", ", config.enabledSchedules.get()));
         }
 
         return builder.build();

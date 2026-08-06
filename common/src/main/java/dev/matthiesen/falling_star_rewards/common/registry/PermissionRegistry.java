@@ -1,6 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.registry;
 
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.matthiesen_core.common.api.permissions.Permission;
 import dev.matthiesen.matthiesen_core.common.api.permissions.PermissionLevel;
 import dev.matthiesen.matthiesen_core.common.utility.AbstractPermission;
@@ -9,67 +10,67 @@ import net.minecraft.commands.CommandSourceStack;
 public final class PermissionRegistry {
     public static Permission COMMAND_FALLINGSTAR = register(
             "command.fallingstar",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.root
+            FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_HELP = register(
             "command.fallingstar.help",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.help
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_help.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_RELOAD = register(
             "command.fallingstar.reload",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.reload
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_reload.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_CLEANUP = register(
             "command.fallingstar.cleanup",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.cleanup
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_cleanup.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_STATUS = register(
             "command.fallingstar.status",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.status
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_status.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_FORCE = register(
             "command.fallingstar.force",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.force
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_force.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_CONFIRM_DELETE = register(
             "command.fallingstar.confirm_delete",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.confirmDelete
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_confirm_delete.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_ENABLE = register(
             "command.fallingstar.preset.enable",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.enable
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_enable.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_DISABLE = register(
             "command.fallingstar.preset.disable",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.disable
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_disable.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_LIST = register(
             "command.fallingstar.preset.list",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.list
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_list.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_CREATE = register(
             "command.fallingstar.preset.create",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.create
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_create.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_DELETE = register(
             "command.fallingstar.preset.delete",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.delete
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_delete.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_INFO = register(
             "command.fallingstar.preset.info",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.info
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_info.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_SET = register(
             "command.fallingstar.preset.set",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.set
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_set.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_ADD = register(
             "command.fallingstar.preset.add",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.add
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_add.getAsInt()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_REMOVE = register(
             "command.fallingstar.preset.remove",
-        FallingStarRewards.INSTANCE.getPermissionsConfig().command.fallingstar.preset.remove
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_remove.getAsInt()
     );
 
     public static class Permissions {

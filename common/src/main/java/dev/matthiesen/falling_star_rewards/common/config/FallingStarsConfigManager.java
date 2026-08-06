@@ -9,7 +9,6 @@ import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.NamedPreset;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import dev.matthiesen.matthiesen_core.common.utility.config.ConfigFolderManager;
-import dev.matthiesen.matthiesen_core.common.utility.config.ConfigManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -22,8 +21,6 @@ public final class FallingStarsConfigManager {
     private static final String BASE_ID = "base";
 
     private final FallingStarRewards MOD_INSTANCE;
-    private ConfigManager<MainConfig> MAIN_CONFIG;
-    private ConfigManager<PermissionsConfig> PERMISSIONS_CONFIG;
     private ConfigFolderManager<EventPresetConfig> EVENTS_CONFIG;
     private ConfigFolderManager<RewardsPresetConfig> REWARDS_CONFIG;
     private ConfigFolderManager<VisualsPresetConfig> VISUALS_CONFIG;
@@ -34,22 +31,16 @@ public final class FallingStarsConfigManager {
     }
 
     public void init() {
-        MAIN_CONFIG = MOD_INSTANCE.createConfigManager(MainConfig.class, "config");
-        PERMISSIONS_CONFIG = MOD_INSTANCE.createConfigManager(PermissionsConfig.class, "permissions");
         EVENTS_CONFIG = MOD_INSTANCE.createConfigFolderManager(EventPresetConfig.class, "events");
         REWARDS_CONFIG = MOD_INSTANCE.createConfigFolderManager(RewardsPresetConfig.class, "rewards");
         VISUALS_CONFIG = MOD_INSTANCE.createConfigFolderManager(VisualsPresetConfig.class, "visuals");
-
         SCHEDULES_CONFIG = MOD_INSTANCE.createConfigFolderManager(SchedulePresetConfig.class, "schedules");
 
-        // Load the main config to verify if we need to generate presets
-        var config = MAIN_CONFIG.loadConfig();
-        PERMISSIONS_CONFIG.loadConfig();
         EVENTS_CONFIG.loadConfigs();
         REWARDS_CONFIG.loadConfigs();
         VISUALS_CONFIG.loadConfigs();
         SCHEDULES_CONFIG.loadConfigs();
-        handlePresetGeneration(config.enablePresetGeneration);
+        handlePresetGeneration(FSConfig.SERVER_CONFIG.enablePresetGeneration.getAsBoolean());
     }
 
     public void handlePresetGeneration(boolean enabled) {
@@ -59,14 +50,6 @@ public final class FallingStarsConfigManager {
             VISUALS_CONFIG.loadConfig(BASE_ID);
             SCHEDULES_CONFIG.loadConfig(BASE_ID);
         }
-    }
-
-    public ConfigManager<MainConfig> getMainConfigManager() {
-        return MAIN_CONFIG;
-    }
-
-    public ConfigManager<PermissionsConfig> getPermissionsConfigManager() {
-        return PERMISSIONS_CONFIG;
     }
 
     public ConfigFolderManager<EventPresetConfig> getEventsConfigManager() {
@@ -134,13 +117,13 @@ public final class FallingStarsConfigManager {
         return enabled.get(index);
     }
 
-    public List<NamedPreset<SchedulePresetConfig>> resolveEnabledSchedules(MainConfig mainConfig) {
+    public List<NamedPreset<SchedulePresetConfig>> resolveEnabledSchedules() {
         List<NamedPreset<SchedulePresetConfig>> enabledSchedules = new ArrayList<>();
-        if (mainConfig.enabledSchedules == null || mainConfig.enabledSchedules.isEmpty()) {
+        if (FSConfig.SERVER_CONFIG.enabledSchedules.get() == null || FSConfig.SERVER_CONFIG.enabledSchedules.get().isEmpty()) {
             return enabledSchedules;
         }
 
-        LinkedHashSet<String> dedupedIds = new LinkedHashSet<>(mainConfig.enabledSchedules);
+        LinkedHashSet<String> dedupedIds = new LinkedHashSet<>(FSConfig.SERVER_CONFIG.enabledSchedules.get());
         for (String scheduleId : dedupedIds) {
             if (scheduleId == null || scheduleId.isBlank() || !SCHEDULES_CONFIG.hasConfig(scheduleId)) {
                 continue;

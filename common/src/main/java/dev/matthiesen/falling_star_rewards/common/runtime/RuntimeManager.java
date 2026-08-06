@@ -1,7 +1,6 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import net.minecraft.server.MinecraftServer;
@@ -22,12 +21,12 @@ public final class RuntimeManager {
         return starEventService.cleanupActiveDrops(server);
     }
 
-    public static int runCycle(MinecraftServer server, MainConfig mainConfig, LoadedPreset presetConfig, boolean bypassActivationChecks) {
-        return starEventService.runCycle(server, mainConfig, presetConfig, bypassActivationChecks, null);
+    public static int runCycle(MinecraftServer server, LoadedPreset presetConfig, boolean bypassActivationChecks) {
+        return starEventService.runCycle(server, presetConfig, bypassActivationChecks, null);
     }
 
-    public static void tick(MinecraftServer server, MainConfig config) {
-        var enabledSchedules = FallingStarRewards.CONFIG_MANAGER.resolveEnabledSchedules(config);
+    public static void tick(MinecraftServer server) {
+        var enabledSchedules = FallingStarRewards.CONFIG_MANAGER.resolveEnabledSchedules();
         if (enabledSchedules.isEmpty()) {
             return;
         }
@@ -57,7 +56,7 @@ public final class RuntimeManager {
                 continue;
             }
 
-            int spawned = starEventService.runCycle(server, config, preset, false, scheduleConfig);
+            int spawned = starEventService.runCycle(server, preset, false, scheduleConfig);
             if (spawned > 0) {
                 FallingStarRewards.INSTANCE.createInfoLog(
                         "Starting star cycle at tick " + gameTick + " for schedule '" + scheduleId + "' (spawned=" + spawned + ")"
