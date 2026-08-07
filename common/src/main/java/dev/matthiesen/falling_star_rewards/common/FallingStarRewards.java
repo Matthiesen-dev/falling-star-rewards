@@ -68,6 +68,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
     }
 
     public void onServerReload(ServerEvent.Reload event) {
+        if (!isServerRunning) return;
         reload().run();
     }
 
