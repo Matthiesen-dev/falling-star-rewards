@@ -1,6 +1,6 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
 
 import java.util.ArrayList;
@@ -11,20 +11,20 @@ import java.util.random.RandomGenerator;
 
 public final class RewardRoller {
 
-    public Optional<RolledReward> roll(RewardsPresetConfig config) {
+    public Optional<RolledReward> roll(RewardPreset config) {
         return roll(config, ThreadLocalRandom.current());
     }
 
-    public Optional<RolledReward> roll(RewardsPresetConfig config, RandomGenerator random) {
-        List<RewardsPresetConfig.RewardEntry> candidates = new ArrayList<>();
+    public Optional<RolledReward> roll(RewardPreset config, RandomGenerator random) {
+        List<RewardPreset.RewardEntry> candidates = new ArrayList<>();
         int totalWeight = 0;
 
-        for (RewardsPresetConfig.RewardEntry entry : config.entries) {
-            if (entry == null || entry.id == null || entry.id.isBlank()) {
+        for (var entry : config.entries()) {
+            if (entry == null || entry.itemId() == null || entry.itemId().isBlank()) {
                 continue;
             }
 
-            int weight = Math.max(0, entry.weight);
+            int weight = Math.max(0, entry.weight());
             if (weight == 0) {
                 continue;
             }
@@ -39,17 +39,17 @@ public final class RewardRoller {
 
         int rolledWeight = random.nextInt(totalWeight);
         int cursor = 0;
-        for (RewardsPresetConfig.RewardEntry candidate : candidates) {
-            cursor += Math.max(0, candidate.weight);
+        for (var candidate : candidates) {
+            cursor += Math.max(0, candidate.weight());
             if (rolledWeight < cursor) {
-                int min = Math.max(1, candidate.minCount);
-                int max = Math.max(min, candidate.maxCount);
+                int min = Math.max(1, candidate.minCount());
+                int max = Math.max(min, candidate.maxCount());
                 int count = min + random.nextInt((max - min) + 1);
                 return Optional.of(new RolledReward(
-                        candidate.id,
+                        candidate.itemId(),
                         count,
-                        candidate.customModelData,
-                        candidate.customData
+                        candidate.customModelData(),
+                        candidate.customData()
                 ));
             }
         }

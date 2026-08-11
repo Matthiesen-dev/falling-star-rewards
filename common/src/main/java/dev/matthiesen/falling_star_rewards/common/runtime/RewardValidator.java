@@ -1,7 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
@@ -16,18 +16,18 @@ public final class RewardValidator {
     private int invalidEntries = 0;
     private final List<String> validationMessages = new ArrayList<>();
 
-    public void validateRewards(RewardsPresetConfig config) {
+    public void validateRewards(RewardPreset config) {
         validEntries = 0;
         invalidEntries = 0;
         validationMessages.clear();
 
-        if (config.entries == null || config.entries.length == 0) {
+        if (config.entries() == null || config.entries().isEmpty()) {
             validationMessages.add("No reward entries configured.");
             return;
         }
 
-        for (int i = 0; i < config.entries.length; i++) {
-            RewardsPresetConfig.RewardEntry entry = config.entries[i];
+        for (int i = 0; i < config.entries().size(); i++) {
+            RewardPreset.RewardEntry entry = config.entries().get(i);
             if (validateEntry(entry, i)) {
                 validEntries++;
             } else {
@@ -37,45 +37,45 @@ public final class RewardValidator {
 
     }
 
-    private boolean validateEntry(RewardsPresetConfig.RewardEntry entry, int index) {
+    private boolean validateEntry(RewardPreset.RewardEntry entry, int index) {
         if (entry == null) {
                     validationMessages.add("Reward entry " + index + " is null");
             return false;
         }
 
-        if (entry.id == null || entry.id.isBlank()) {
+        if (entry.itemId() == null || entry.itemId().isBlank()) {
                     validationMessages.add("Reward entry " + index + " has no id");
             return false;
         }
 
-        ResourceLocation itemId = ResourceLocation.tryParse(entry.id);
+        ResourceLocation itemId = ResourceLocation.tryParse(entry.itemId());
         if (itemId == null) {
-                    validationMessages.add("Reward entry " + index + " has invalid item id: " + entry.id);
+                    validationMessages.add("Reward entry " + index + " has invalid item id: " + entry.itemId());
             return false;
         }
 
         if (BuiltInRegistries.ITEM.getOptional(itemId).isEmpty()) {
-                    validationMessages.add("Reward entry " + index + " references unknown item: " + entry.id);
+                    validationMessages.add("Reward entry " + index + " references unknown item: " + entry.itemId());
             return false;
         }
 
-        if (entry.weight <= 0) {
-                    validationMessages.add("Reward entry " + index + " (" + entry.id + ") has non-positive weight: " + entry.weight);
+        if (entry.weight() <= 0) {
+                    validationMessages.add("Reward entry " + index + " (" + entry.itemId() + ") has non-positive weight: " + entry.weight());
             return false;
         }
 
-        int min = Math.max(1, entry.minCount);
-        int max = Math.max(min, entry.maxCount);
-        if (min != entry.minCount || max != entry.maxCount) {
-                    validationMessages.add("Reward entry " + index + " (" + entry.id + ") has out-of-range counts, normalized to " + min + ".." + max);
+        int min = Math.max(1, entry.minCount());
+        int max = Math.max(min, entry.maxCount());
+        if (min != entry.minCount() || max != entry.maxCount()) {
+                    validationMessages.add("Reward entry " + index + " (" + entry.itemId() + ") has out-of-range counts, normalized to " + min + ".." + max);
             return false;
         }
 
-        if (entry.customData != null && !entry.customData.isBlank()) {
+        if (entry.customData() != null && !entry.customData().isBlank()) {
             try {
-                TagParser.parseTag(entry.customData);
+                TagParser.parseTag(entry.customData());
             } catch (CommandSyntaxException e) {
-                        validationMessages.add("Reward entry " + index + " (" + entry.id + ") has invalid customData SNBT: " + e.getMessage());
+                        validationMessages.add("Reward entry " + index + " (" + entry.itemId() + ") has invalid customData SNBT: " + e.getMessage());
                 return false;
             }
         }

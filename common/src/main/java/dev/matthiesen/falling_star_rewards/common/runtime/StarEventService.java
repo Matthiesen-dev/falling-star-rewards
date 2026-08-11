@@ -3,8 +3,9 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
-import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
 import dev.matthiesen.falling_star_rewards.common.interfaces.EventCommandContext;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
@@ -114,9 +115,9 @@ public final class StarEventService {
             MinecraftServer server,
             LoadedPreset presetConfig,
             boolean bypassActivationChecks,
-            SchedulePresetConfig scheduleConfig
+            SchedulePreset scheduleConfig
     ) {
-        int cappedMaxStars = scheduleConfig == null ? 1 : Math.max(1, scheduleConfig.maxStarsPerCycle);
+        int cappedMaxStars = scheduleConfig == null ? 1 : Math.max(1, scheduleConfig.maxStarsPerCycle());
         int maxActiveDrops = Math.max(1, FSConfig.SERVER_CONFIG.claim_maxActiveDrops.getAsInt());
         if (activeDrops.size() >= maxActiveDrops) {
             return 0;
@@ -152,7 +153,7 @@ public final class StarEventService {
         return spawned;
     }
 
-    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, SchedulePresetConfig scheduleConfig, boolean bypassActivationChecks) {
+    private List<ServerPlayer> collectEligiblePlayers(MinecraftServer server, SchedulePreset scheduleConfig, boolean bypassActivationChecks) {
         List<ServerPlayer> eligible = new ArrayList<>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (isPlayerEligible(player, scheduleConfig, bypassActivationChecks)) {
@@ -163,35 +164,33 @@ public final class StarEventService {
         return eligible;
     }
 
-    private boolean isPlayerEligible(ServerPlayer player, SchedulePresetConfig scheduleConfig, boolean bypassActivationChecks) {
+    private boolean isPlayerEligible(ServerPlayer player, SchedulePreset scheduleConfig, boolean bypassActivationChecks) {
         ServerLevel level = player.serverLevel();
 
         if (bypassActivationChecks || scheduleConfig == null) {
             return true;
         }
 
-        SchedulePresetConfig.Conditions conditions = scheduleConfig.conditions == null
-                ? new SchedulePresetConfig.Conditions()
-                : scheduleConfig.conditions;
+        SchedulePreset.Conditions conditions = scheduleConfig.conditions();
 
-        if (!isTimeEligible(level, conditions.timeMode)) {
+        if (!isTimeEligible(level, conditions.timeMode())) {
             return false;
         }
 
-        if (!isWeatherEligible(level, conditions.weatherMode)) {
+        if (!isWeatherEligible(level, conditions.weatherMode())) {
             return false;
         }
 
-        if (!isMoonPhaseEligible(level, conditions.moonPhases)) {
+        if (!isMoonPhaseEligible(level, conditions.moonPhases())) {
             return false;
         }
 
-        return !conditions.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
+        return !conditions.requireSurfaceAccess() || level.canSeeSky(player.blockPosition());
     }
 
     private boolean spawnStarNearPlayer(ServerPlayer player, LoadedPreset presetConfig) {
         ServerLevel level = player.serverLevel();
-        int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn.maxLocationAttempts);
+        int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn().maxLocationAttempts());
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
             BlockPos spawnPos = pickSpawnPosition(player, presetConfig);
@@ -248,7 +247,7 @@ public final class StarEventService {
     }
 
     private void runEventCommands(EventCommandContext context) {
-        var commandList = context.presetConfig().eventConfig.commands;
+        var commandList = context.presetConfig().eventConfig.commands();
         if (commandList.isEmpty()) return;
 
         for (String command : commandList) {
@@ -261,8 +260,8 @@ public final class StarEventService {
     private BlockPos pickSpawnPosition(ServerPlayer player, LoadedPreset config) {
         ServerLevel level = player.serverLevel();
 
-        int minRadius = Math.max(0, config.eventConfig.spawn.minRadius);
-        int maxRadius = Math.max(minRadius, config.eventConfig.spawn.maxRadius);
+        int minRadius = Math.max(0, config.eventConfig.spawn().minRadius());
+        int maxRadius = Math.max(minRadius, config.eventConfig.spawn().maxRadius());
 
         double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
         double radius = minRadius + ThreadLocalRandom.current().nextDouble((maxRadius - minRadius) + 1.0D);
@@ -281,7 +280,7 @@ public final class StarEventService {
             return null;
         }
 
-        if (!config.eventConfig.spawn.allowWaterSpawns && !level.getFluidState(spawnPos).isEmpty()) {
+        if (!config.eventConfig.spawn().allowWaterSpawns() && !level.getFluidState(spawnPos).isEmpty()) {
             return null;
         }
 
@@ -292,21 +291,19 @@ public final class StarEventService {
         return spawnPos;
     }
 
-    private boolean isWeatherEligible(ServerLevel level, String weatherMode) {
-        String mode = weatherMode == null ? "any" : weatherMode.toLowerCase(Locale.ROOT);
-        return switch (mode) {
-            case "clear" -> !level.isRaining();
-            case "rain" -> level.isRaining() && !level.isThundering();
-            case "thunder" -> level.isThundering();
+    private boolean isWeatherEligible(ServerLevel level, SchedulePreset.Conditions.WeatherMode weatherMode) {
+        return switch (weatherMode) {
+            case CLEAR -> !level.isRaining();
+            case RAIN -> level.isRaining() && !level.isThundering();
+            case THUNDER -> level.isThundering();
             default -> true;
         };
     }
 
-    private boolean isTimeEligible(ServerLevel level, String timeMode) {
-        String mode = timeMode == null ? "any" : timeMode.toLowerCase(Locale.ROOT);
-        return switch (mode) {
-            case "day" -> level.isDay();
-            case "night" -> level.isNight();
+    private boolean isTimeEligible(ServerLevel level, SchedulePreset.Conditions.TimeMode timeMode) {
+        return switch (timeMode) {
+            case DAY -> level.isDay();
+            case NIGHT -> level.isNight();
             default -> true;
         };
     }
@@ -356,7 +353,7 @@ public final class StarEventService {
     }
 
     private boolean isGlobalScope(LoadedPreset config) {
-        return "global".equalsIgnoreCase(config.eventConfig.spawn.targetScope);
+        return config.eventConfig.spawn().targetScope() == EventPreset.SpawnTargetScope.GLOBAL;
     }
 
     private String pickString(List<String> stringList) {
@@ -368,25 +365,25 @@ public final class StarEventService {
     }
 
     private void announceSpawn(ServerPlayer sourcePlayer, LoadedPreset config) {
-        if (!config.eventConfig.announcement.enabled || config.eventConfig.announcement.messages.isEmpty()) {
+        if (!config.eventConfig.announcement().enabled() || config.eventConfig.announcement().messages().isEmpty()) {
             return;
         }
 
-        var useActionBarOverlay = config.eventConfig.announcement.useActionBar;
+        var useActionBarOverlay = config.eventConfig.announcement().useActionBar();
 
         MinecraftServer server = sourcePlayer.getServer();
         if (server == null) {
             return;
         }
 
-        String rawMessage = pickString(config.eventConfig.announcement.messages);
+        String rawMessage = pickString(config.eventConfig.announcement().messages());
         Component message = Component.literal(rawMessage).withStyle(ChatFormatting.AQUA);
-        if ("global".equalsIgnoreCase(config.eventConfig.announcement.scope)) {
+        if (config.eventConfig.announcement().scope() == EventPreset.AnnouncementScope.GLOBAL) {
             server.getPlayerList().broadcastSystemMessage(message, useActionBarOverlay);
             return;
         }
 
-        double maxDistance = Math.max(16, config.eventConfig.spawn.maxRadius + ANNOUNCE_NEARBY_BUFFER);
+        double maxDistance = Math.max(16, config.eventConfig.spawn().maxRadius() + ANNOUNCE_NEARBY_BUFFER);
         double maxDistanceSq = maxDistance * maxDistance;
         for (ServerPlayer viewer : sourcePlayer.serverLevel().players()) {
             if (viewer.distanceToSqr(sourcePlayer) <= maxDistanceSq) {
@@ -444,35 +441,35 @@ public final class StarEventService {
         return null;
     }
 
-    private void emitFallingStarTrail(ServerLevel level, Entity entity, ActiveStarDrop activeDrop, long tick, VisualsPresetConfig visualsPresetConfig) {
-        if (!visualsPresetConfig.enabled) {
+    private void emitFallingStarTrail(ServerLevel level, Entity entity, ActiveStarDrop activeDrop, long tick, VisualsPreset visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled()) {
             return;
         }
 
-        int interval = Math.max(1, visualsPresetConfig.emissionIntervalTicks);
+        int interval = Math.max(1, visualsPresetConfig.emissionIntervalTicks());
         if ((tick % interval) != 0) {
             return;
         }
 
-        int fallDistance = Math.max(2, visualsPresetConfig.fallDistance);
+        int fallDistance = Math.max(2, visualsPresetConfig.fallDistance());
         long elapsed = Math.max(0L, tick - activeDrop.startTick());
         double phase = (elapsed % fallDistance) / (double) fallDistance;
         double y = entity.getY() + 0.5D + (1.0D - phase) * fallDistance;
 
-        ParticleOptions particle = resolveParticlePreset(visualsPresetConfig.particlePreset);
-        int particleCount = Math.max(1, visualsPresetConfig.particlesPerEmission);
+        ParticleOptions particle = resolveParticlePreset(visualsPresetConfig.particlePreset());
+        int particleCount = Math.max(1, visualsPresetConfig.particlesPerEmission());
         level.sendParticles(particle, entity.getX(), y, entity.getZ(), particleCount, 0.2D, 0.05D, 0.2D, 0.0D);
         emitTravelSound(level, entity.getX(), y, entity.getZ(), tick, visualsPresetConfig);
     }
 
-    private void emitImpactBurst(ServerLevel level, BlockPos spawnPos, VisualsPresetConfig visualsPresetConfig) {
-        if (!visualsPresetConfig.enabled || !visualsPresetConfig.impact.burstEnabled) {
+    private void emitImpactBurst(ServerLevel level, BlockPos spawnPos, VisualsPreset visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled() || !visualsPresetConfig.impact().burstEnabled()) {
             return;
         }
 
-        ParticleOptions particle = resolveParticlePreset(visualsPresetConfig.impact.particlePreset);
-        int count = Math.max(1, visualsPresetConfig.impact.particleCount);
-        double spread = Math.max(0.0D, visualsPresetConfig.impact.spread);
+        ParticleOptions particle = resolveParticlePreset(visualsPresetConfig.impact().particlePreset());
+        int count = Math.max(1, visualsPresetConfig.impact().particleCount());
+        double spread = Math.max(0.0D, visualsPresetConfig.impact().spread());
 
         level.sendParticles(
                 particle,
@@ -487,19 +484,19 @@ public final class StarEventService {
         );
     }
 
-    private void emitImpactSound(ServerLevel level, BlockPos spawnPos, VisualsPresetConfig visualsPresetConfig) {
-        if (!visualsPresetConfig.enabled || !visualsPresetConfig.impact.soundEnabled) {
+    private void emitImpactSound(ServerLevel level, BlockPos spawnPos, VisualsPreset visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled() || !visualsPresetConfig.impact().soundEnabled()) {
             return;
         }
 
-        SoundEvent soundEvent = resolveSoundEvent(visualsPresetConfig.impact.soundId);
+        SoundEvent soundEvent = resolveSoundEvent(visualsPresetConfig.impact().soundId());
         if (soundEvent == null) {
             return;
         }
 
-        float volume = Math.max(0.0F, visualsPresetConfig.impact.soundVolume);
-        float minPitch = Math.max(0.1F, visualsPresetConfig.impact.soundPitchMin);
-        float maxPitch = Math.max(minPitch, visualsPresetConfig.impact.soundPitchMax);
+        float volume = Math.max(0.0F, visualsPresetConfig.impact().soundVolume());
+        float minPitch = Math.max(0.1F, visualsPresetConfig.impact().soundPitchMin());
+        float maxPitch = Math.max(minPitch, visualsPresetConfig.impact().soundPitchMax());
         float pitch = minPitch;
         if (maxPitch > minPitch) {
             pitch = minPitch + ThreadLocalRandom.current().nextFloat() * (maxPitch - minPitch);
@@ -517,24 +514,24 @@ public final class StarEventService {
         );
     }
 
-    private void emitTravelSound(ServerLevel level, double x, double y, double z, long tick, VisualsPresetConfig config) {
-        if (!config.enabled || !config.travelSound.enabled) {
+    private void emitTravelSound(ServerLevel level, double x, double y, double z, long tick, VisualsPreset visualsPresetConfig) {
+        if (!visualsPresetConfig.enabled() || !visualsPresetConfig.travelSound().enabled()) {
             return;
         }
 
-        int interval = Math.max(1, config.travelSound.intervalTicks);
+        int interval = Math.max(1, visualsPresetConfig.travelSound().intervalTicks());
         if ((tick % interval) != 0) {
             return;
         }
 
-        SoundEvent soundEvent = resolveSoundEvent(config.travelSound.id);
+        SoundEvent soundEvent = resolveSoundEvent(visualsPresetConfig.travelSound().id());
         if (soundEvent == null) {
             return;
         }
 
-        float volume = Math.max(0.0F, config.travelSound.volume);
-        float minPitch = Math.max(0.1F, config.travelSound.pitchMin);
-        float maxPitch = Math.max(minPitch, config.travelSound.pitchMax);
+        float volume = Math.max(0.0F, visualsPresetConfig.travelSound().volume());
+        float minPitch = Math.max(0.1F, visualsPresetConfig.travelSound().pitchMin());
+        float maxPitch = Math.max(minPitch, visualsPresetConfig.travelSound().pitchMax());
         float pitch = minPitch;
         if (maxPitch > minPitch) {
             pitch = minPitch + ThreadLocalRandom.current().nextFloat() * (maxPitch - minPitch);
@@ -552,15 +549,15 @@ public final class StarEventService {
         return BuiltInRegistries.SOUND_EVENT.getOptional(resourceLocation).orElse(null);
     }
 
-    private ParticleOptions resolveParticlePreset(String preset) {
+    private ParticleOptions resolveParticlePreset(VisualsPreset.ParticlePreset preset) {
         if (preset == null) {
             return ParticleTypes.END_ROD;
         }
 
-        return switch (preset.toLowerCase(Locale.ROOT)) {
-            case "ash" -> ParticleTypes.ASH;
-            case "glow" -> ParticleTypes.GLOW;
-            case "firework" -> ParticleTypes.FIREWORK;
+        return switch (preset) {
+            case ASH -> ParticleTypes.ASH;
+            case GLOW -> ParticleTypes.GLOW;
+            case FIREWORK -> ParticleTypes.FIREWORK;
             default -> ParticleTypes.END_ROD;
         };
     }

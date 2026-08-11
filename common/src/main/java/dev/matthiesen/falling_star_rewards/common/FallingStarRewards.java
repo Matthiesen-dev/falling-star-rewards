@@ -45,8 +45,12 @@ public final class FallingStarRewards extends AbstractCommonMod {
     public void initialize() {
         super.initialize();
 
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, "falling_star_rewards/server.toml");
         registerModConfig(MOD_ID, ModConfigType.STARTUP, FSConfig.PERMISSIONS_START_SPEC, "falling_star_rewards/permissions.toml");
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, "falling_star_rewards/server.toml");
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.EVENTS_CONFIG_SPEC, "falling_star_rewards/events.toml");
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.REWARDS_CONFIG_SPEC, "falling_star_rewards/rewards.toml");
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SCHEDULE_CONFIG_SPEC, "falling_star_rewards/schedules.toml");
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.VISUALS_CONFIG_SPEC, "falling_star_rewards/visuals.toml");
 
         PermissionRegistry.init();
 
@@ -87,7 +91,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
     public Runnable reload() {
         return () -> {
             loadConfigs();
-            CONFIG_MANAGER.validateRewardsConfigs();
+            FSConfig.validateRewardsConfigs();
             createInfoLog("Reloaded Config (enabled=" + FSConfig.SERVER_CONFIG.enabled.getAsBoolean() + ")");
         };
     }
@@ -97,10 +101,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
         CONFIG_MANAGER.getRewardsConfigManager().loadConfigs();
         CONFIG_MANAGER.getVisualsConfigManager().loadConfigs();
         CONFIG_MANAGER.getSchedulesConfigManager().loadConfigs();
-    }
-
-    public FallingStarsConfigManager getConfigManager() {
-        return CONFIG_MANAGER;
     }
 
     public long getNextCycleTick() {
@@ -120,7 +120,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
             createInfoLog("Cannot force cycle - mod is disabled");
             return 0;
         }
-        var preset = presetId != null ? CONFIG_MANAGER.loadPresetConfig(presetId) : CONFIG_MANAGER.loadRandomEventPreset();
+        var preset = presetId != null ? FSConfig.loadPresetConfig(presetId) : FSConfig.loadRandomEventPreset();
         if (preset == null) {
             createWarnLog("No event presets available to start a cycle");
             return 0;

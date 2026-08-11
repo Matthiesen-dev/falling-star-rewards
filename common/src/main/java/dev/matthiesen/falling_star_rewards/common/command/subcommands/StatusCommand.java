@@ -50,9 +50,9 @@ public final class StatusCommand {
 
         builder
                 .addSection("Presets")
-                .addRow("Available Events", Integer.toString(mod.getConfigManager().calculateEventPresets()))
-                .addRow("Available Rewards", Integer.toString(mod.getConfigManager().calculateRewardPresets()))
-                .addRow("Available Schedules", Integer.toString(mod.getConfigManager().calculateSchedulePresets()));
+                .addRow("Available Events", Integer.toString(FSConfig.calculateEventPresets()))
+                .addRow("Available Rewards", Integer.toString(FSConfig.calculateRewardPresets()))
+                .addRow("Available Schedules", Integer.toString(FSConfig.calculateSchedulePresets()));
 
         if (full) {
             builder
