@@ -39,7 +39,7 @@
 
 ## Breaking Change (Beta)
 - Legacy `config.scheduler` and event `activation` fields have been hard-removed.
-- All activation logic now lives inside schedule presets under `/config/falling_star_rewards/schedules/*.json`.
+- All activation logic now lives inside schedule presets under `/config/falling_star_rewards/schedules.toml`.
 - `config.enabledSchedules` controls which schedules are active.
 - Legacy `/config/falling_star_rewards/announcements.json` has been removed.
 - Announcement behavior now lives in each event preset under `announcement`.
@@ -58,196 +58,72 @@ Current implementation note: active item drops are tracked and explicitly discar
 
 ## Config Contract (v2)
 
-### `/config/falling_star_rewards/config.json` - Main config file.
+### Hard Cutover Notes
+
+- Presets are now managed only via FSConfig-backed TOML config files.
+- Legacy preset folders (`events/*.json`, `rewards/*.json`, `visuals/*.json`, `schedules/*.json`) are no longer read.
+- No automatic migration/import is performed from legacy JSON presets.
+- Default preset IDs are standardized to `base` across all preset categories.
+
+### `/config/falling_star_rewards/server.toml` - Main server settings
 
 - `enabled`: master switch.
 - `enabledSchedules`: list of active schedule preset IDs.
-- `claim`
-  - `lifeTicks`: despawn timer for spawned stars.
-  - `pickupDelayTicks`: delay before pickup is allowed.
-  - `maxActiveDrops`: hard cap for concurrently tracked star drops.
+- `enablePresetGeneration`: deprecated; retained for one release, currently unused.
+- `claim.lifeTicks`: despawn timer for spawned stars.
+- `claim.pickupDelayTicks`: delay before pickup is allowed.
+- `claim.maxActiveDrops`: hard cap for concurrently tracked star drops.
 
-```json
-{
-  "enabled": true,
-  "enablePresetGeneration": true,
-  "enabledSchedules": ["base"],
-  "claim": {
-    "lifeTicks": 900,
-    "pickupDelayTicks": 10,
-    "maxActiveDrops": 64
-  }
-}
+```toml
+[general]
+enabled = true
+enablePresetGeneration = true # Deprecated/unused
+enabledSchedules = ["base"]
+
+[claim]
+lifeTicks = 900
+pickupDelayTicks = 10
+maxActiveDrops = 64
 ```
 
-### `/config/falling_star_rewards/events/<id>.json` - Event preset file.
+### `/config/falling_star_rewards/events.toml` - Event preset list
 
-- `enabled`: toggles this event preset.
-- `rewardsPresetId`: reward preset ID to use for this event.
-- `visualsPresetId`: visuals preset ID to use for this event.
-- `commands[]`: optional server commands to run after a successful spawn.
-  - Leading `/` is optional.
-  - Supports `%nearbyPlayer%`, `%spawnPos%`, and `%rewardItem%` placeholders.
-- `spawn`
-  - `targetScope`: `per_player | global`.
-  - `minRadius`, `maxRadius`: distance from target player.
-  - `maxLocationAttempts`: attempts to find safe spawn location.
-  - `allowWaterSpawns`: whether liquid blocks are valid spawn points.
-- `announcement`
-  - `enabled`: toggles spawn announcement for this event preset.
-  - `scope`: `nearby | global`.
-  - `useActionBar`: whether to send as overlay/action bar instead of chat line.
-  - `messages[]`: message pool; one message is selected randomly per spawn.
+- `events.eventPresets`: list of event preset objects.
+- Each preset includes:
+  - `eventId`: unique ID (default preset is `base`).
+  - `enabled`.
+  - `rewardsPresetId`, `visualsPresetId`.
+  - `commands[]`: optional post-spawn commands.
+  - `spawn.targetScope`: `per_player | global`.
+  - `spawn.minRadius`, `spawn.maxRadius`, `spawn.maxLocationAttempts`, `spawn.allowWaterSpawns`.
+  - `announcement.enabled`, `announcement.scope`, `announcement.useActionBar`, `announcement.messages[]`.
 
-```json
-{
-  "enabled": true,
-  "rewardsPresetId": "base",
-  "visualsPresetId": "base",
-  "commands": [
-    "tellraw %nearbyPlayer% {\"text\":\"A star landed at %spawnPos% with %rewardItem%!\",\"color\":\"gold\"}",
-    "playsound minecraft:entity.experience_orb.pickup player %nearbyPlayer%"
-  ],
-  "spawn": {
-    "targetScope": "per_player",
-    "minRadius": 16,
-    "maxRadius": 48,
-    "maxLocationAttempts": 12,
-    "allowWaterSpawns": false
-  },
-  "announcement": {
-    "enabled": true,
-    "scope": "nearby",
-    "useActionBar": false,
-    "messages": [
-      "A falling star has appeared nearby!",
-      "A falling star has appeared in the sky!",
-      "A falling star has appeared in the world!"
-    ]
-  }
-}
-```
+### `/config/falling_star_rewards/rewards.toml` - Reward preset list
 
-### `/config/falling_star_rewards/schedules/<id>.json` - Schedule preset file.
+- `rewards.rewardPresets`: list of reward preset objects.
+- Each preset includes:
+  - `rewardId`: unique ID (default preset is `base`).
+  - `entries[]` with `itemId`, `weight`, `minCount`, `maxCount`.
+  - Optional `entries[].customModelData`.
+  - Optional `entries[].customData` (SNBT payload for `custom_data`).
 
-- `enabled`: toggles this schedule.
-- `baseIntervalTicks`: base delay between schedule cycles.
-- `intervalJitterTicks`: random extra delay (0..jitter).
-- `maxStarsPerCycle`: cap events started for this schedule cycle.
-- `selectionMode`: `random | weighted | rotation`.
-- `eventEntries[]`
-  - `eventPresetId`: event preset to select from.
-  - `enabled`: include/exclude this entry.
-  - `weight`: used by `weighted` mode, defaults to `1` when missing/non-positive.
-- `conditions`
-  - `timeMode`: `any | day | night`.
-  - `requireSurfaceAccess`: skip players in covered areas/caves.
-  - `weatherMode`: `any | clear | rain | thunder`.
-  - `moonPhases`: accepts names and/or numeric IDs (`0..7`), mixed values are de-duplicated.
-- `state.rotationCursor`: persisted rotation pointer for deterministic `rotation` mode.
+### `/config/falling_star_rewards/visuals.toml` - Visuals preset list
 
-```json
-{
-  "enabled": true,
-  "baseIntervalTicks": 2400,
-  "intervalJitterTicks": 600,
-  "maxStarsPerCycle": 1,
-  "selectionMode": "weighted",
-  "eventEntries": [
-    { "eventPresetId": "base", "enabled": true, "weight": 3 },
-    { "eventPresetId": "rare", "enabled": true, "weight": 1 }
-  ],
-  "conditions": {
-    "timeMode": "night",
-    "requireSurfaceAccess": true,
-    "weatherMode": "any",
-    "moonPhases": ["full_moon", "0", "new_moon", "4"]
-  },
-  "state": {
-    "rotationCursor": 0
-  }
-}
-```
+- `visuals.visualsPresets`: list of visuals preset objects.
+- Each preset includes:
+  - `visualsId`: unique ID (default preset is `base`).
+  - `enabled`, `particlePreset`, `fallDistance`, `emissionIntervalTicks`, `particlesPerEmission`.
+  - `impact`: `burstEnabled`, `particlePreset`, `particleCount`, `spread`, `soundEnabled`, `soundId`, `soundVolume`, `soundPitchMin`, `soundPitchMax`.
+  - `travelSound`: `enabled`, `id`, `volume`, `pitchMin`, `pitchMax`, `intervalTicks`.
 
+### `/config/falling_star_rewards/schedules.toml` - Schedule preset list
 
-### `/config/falling_star_rewards/rewards.json` - Reward pool configs
-
-- `poolMode`: currently `weighted`.
-- `entries`: weighted rewards with count range.
-- `entries[].customModelData`: optional custom model data value.
-- `entries[].customData`: optional SNBT payload applied to the `custom_data` item component.
-
-```json
-{
-    "poolMode": "weighted",
-    "entries": [
-      {
-        "id": "minecraft:amethyst_shard",
-        "weight": 20,
-        "minCount": 1,
-        "maxCount": 3,
-        "customModelData": 12001,
-        "customData": "{star_token:1b}"
-      },
-      {
-        "id": "minecraft:glowstone_dust",
-        "weight": 12,
-        "minCount": 2,
-        "maxCount": 5
-      },
-      {
-        "id": "minecraft:nether_star",
-        "weight": 1,
-        "minCount": 1,
-        "maxCount": 1
-      }
-    ]
-}
-```
-
-### `/config/falling_star_rewards/visuals.json` - Visual effect configs
-
-- `enabled`: toggles falling-star particle trail above active drops.
-- `particlePreset`: `end_rod | ash | glow | firework`.
-- `fallDistance`: vertical distance above drop where the trail starts.
-- `emissionIntervalTicks`: particle emission cadence.
-- `particlesPerEmission`: amount of particles emitted per cadence.
-- `impactBurstEnabled`: toggles one-shot particle burst on spawn.
-- `impactParticlePreset`: preset used for the landing burst.
-- `impactParticleCount`: number of burst particles.
-- `impactSpread`: horizontal/vertical spread for burst particles.
-- `impactSoundEnabled`: toggles one-shot landing sound on spawn.
-- `impactSoundId`: sound event id (for example `minecraft:entity.firework_rocket.twinkle`).
-- `impactSoundVolume`: sound volume.
-- `impactSoundPitchMin` and `impactSoundPitchMax`: random pitch range per impact.
-- `travelSoundEnabled`: toggles low-volume whoosh audio while trail is active.
-- `travelSoundId`: sound event id for whoosh loop.
-- `travelSoundVolume`: whoosh volume.
-- `travelSoundPitchMin` and `travelSoundPitchMax`: random pitch range for whoosh.
-- `travelSoundIntervalTicks`: cadence for whoosh playback while active.
-
-```json
-{
-    "enabled": true,
-    "particlePreset": "end_rod",
-    "fallDistance": 10,
-    "emissionIntervalTicks": 2,
-    "particlesPerEmission": 5,
-    "impactBurstEnabled": true,
-    "impactParticlePreset": "firework",
-    "impactParticleCount": 14,
-    "impactSpread": 0.35,
-    "impactSoundEnabled": true,
-    "impactSoundId": "minecraft:entity.firework_rocket.twinkle",
-    "impactSoundVolume": 0.8,
-    "impactSoundPitchMin": 0.9,
-    "impactSoundPitchMax": 1.2,
-    "travelSoundEnabled": false,
-    "travelSoundId": "minecraft:entity.phantom.flap",
-    "travelSoundVolume": 0.12,
-    "travelSoundPitchMin": 1.3,
-    "travelSoundPitchMax": 1.7,
-    "travelSoundIntervalTicks": 12
-}
-```
+- `schedules.schedulePresets`: list of schedule preset objects.
+- Each preset includes:
+  - `scheduleId`: unique ID (default preset is `base`).
+  - `enabled`, `baseIntervalTicks`, `intervalJitterTicks`, `maxStarsPerCycle`.
+  - `selectionMode`: `random | weighted | rotation`.
+  - `eventEntries[]`: `eventId`, `enabled`, `weight`.
+  - `conditions`: `timeMode`, `requireSurfaceAccess`, `weatherMode`, `moonPhases[]`.
+  - `state.rotationCursor`: persisted cursor for deterministic rotation.
 

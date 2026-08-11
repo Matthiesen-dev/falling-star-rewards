@@ -26,7 +26,7 @@ public record SchedulePreset(
     public static List<Config> getDefaultConfig() {
         List<SchedulePreset> presets = List.of(
                 new SchedulePreset(
-                        "default",
+                        "base",
                         true,
                         20 * 120,
                         20 * 30,

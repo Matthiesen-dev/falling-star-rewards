@@ -1,5 +1,6 @@
 package dev.matthiesen.falling_star_rewards.common.config;
 
+import com.electronwill.nightconfig.core.Config;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
 import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
@@ -10,7 +11,9 @@ import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class FSConfig {
@@ -66,12 +69,128 @@ public final class FSConfig {
                 .toList();
     }
 
+    public static List<String> getEventPresetIds() {
+        return getEventPresets().stream().map(EventPreset::eventId).toList();
+    }
+
+    public static boolean hasEventPreset(String eventId) {
+        return getEventPresets().stream().anyMatch(preset -> preset.eventId().equals(eventId));
+    }
+
+    public static EventPreset getEventPreset(String eventId) {
+        return getEventPresets().stream()
+                .filter(preset -> preset.eventId().equals(eventId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static void setEventPreset(EventPreset eventPreset) {
+        var original = EVENTS_CONFIG.eventPresets.get();
+        boolean exists = original.stream().anyMatch(config -> Objects.equals(config.get("eventId"), eventPreset.eventId()));
+        List<Config> updated = original.stream()
+                .map(config -> Objects.equals(config.get("eventId"), eventPreset.eventId()) ? eventPreset.serialize() : config)
+                .toList();
+
+        if (!exists) {
+            updated = new ArrayList<>(updated);
+            updated.add(eventPreset.serialize());
+        }
+
+        EVENTS_CONFIG.eventPresets.set(updated);
+        EVENTS_CONFIG.eventPresets.save();
+    }
+
+    public static boolean createEventPreset(String eventId) {
+        if (hasEventPreset(eventId)) {
+            return false;
+        }
+        EventPreset base = EventPreset.deserialize(EventPreset.getDefaultConfig().getFirst());
+        setEventPreset(new EventPreset(
+                eventId,
+                base.enabled(),
+                base.rewardsPresetId(),
+                base.visualsPresetId(),
+                base.commands(),
+                base.spawn(),
+                base.announcement()
+        ));
+        return true;
+    }
+
+    public static boolean deleteEventPreset(String eventId) {
+        var original = EVENTS_CONFIG.eventPresets.get();
+        List<Config> filtered = original.stream()
+                .filter(config -> !Objects.equals(config.get("eventId"), eventId))
+                .map(config -> (Config) config)
+                .toList();
+        if (filtered.size() == original.size()) {
+            return false;
+        }
+        EVENTS_CONFIG.eventPresets.set(filtered);
+        EVENTS_CONFIG.eventPresets.save();
+        return true;
+    }
+
     public static List<RewardPreset> getRewardPresets() {
         return REWARDS_CONFIG.rewardPresets.get()
                 .stream()
                 .filter(RewardPreset::isValid)
                 .map(RewardPreset::deserialize)
                 .toList();
+    }
+
+    public static List<String> getRewardPresetIds() {
+        return getRewardPresets().stream().map(RewardPreset::rewardId).toList();
+    }
+
+    public static boolean hasRewardPreset(String rewardId) {
+        return getRewardPresets().stream().anyMatch(preset -> preset.rewardId().equals(rewardId));
+    }
+
+    public static RewardPreset getRewardPreset(String rewardId) {
+        return getRewardPresets().stream()
+                .filter(preset -> preset.rewardId().equals(rewardId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static void setRewardPreset(RewardPreset rewardPreset) {
+        var original = REWARDS_CONFIG.rewardPresets.get();
+        boolean exists = original.stream().anyMatch(config -> Objects.equals(config.get("rewardId"), rewardPreset.rewardId()));
+        List<Config> updated = original.stream()
+                .map(config -> Objects.equals(config.get("rewardId"), rewardPreset.rewardId()) ? rewardPreset.serialize() : config)
+                .toList();
+
+        if (!exists) {
+            updated = new ArrayList<>(updated);
+            updated.add(rewardPreset.serialize());
+        }
+
+        REWARDS_CONFIG.rewardPresets.set(updated);
+        REWARDS_CONFIG.rewardPresets.save();
+    }
+
+    public static boolean createRewardPreset(String rewardId) {
+        if (hasRewardPreset(rewardId)) {
+            return false;
+        }
+        RewardPreset base = RewardPreset.deserialize(RewardPreset.getDefaultConfig().getFirst());
+        setRewardPreset(new RewardPreset(rewardId, base.entries()));
+        return true;
+    }
+
+    public static boolean deleteRewardPreset(String rewardId) {
+        var original = REWARDS_CONFIG.rewardPresets.get();
+        List<Config> filtered = original.stream()
+                .filter(config -> !Objects.equals(config.get("rewardId"), rewardId))
+                .map(config -> (Config) config)
+                .toList();
+        if (filtered.size() == original.size()) {
+            return false;
+        }
+        REWARDS_CONFIG.rewardPresets.set(filtered);
+        REWARDS_CONFIG.rewardPresets.save();
+        return true;
     }
 
     public static List<SchedulePreset> getSchedulePresets() {
@@ -82,21 +201,68 @@ public final class FSConfig {
                 .toList();
     }
 
+    public static List<String> getSchedulePresetIds() {
+        return getSchedulePresets().stream().map(SchedulePreset::scheduleId).toList();
+    }
+
+    public static boolean hasSchedulePreset(String scheduleId) {
+        return getSchedulePresets().stream().anyMatch(preset -> preset.scheduleId().equals(scheduleId));
+    }
+
+    public static SchedulePreset getSchedulePreset(String scheduleId) {
+        return getSchedulePresets().stream()
+                .filter(preset -> preset.scheduleId().equals(scheduleId))
+                .findFirst()
+                .orElse(null);
+    }
+
     public static void setSchedulePreset(SchedulePreset schedulePreset) {
         var originalSchedulePreset = SCHEDULE_CONFIG.schedulePresets.get();
-
-        var updatedSchedulePreset = originalSchedulePreset.stream()
-                .map(config -> {
-                    if (config.get("scheduleId").equals(schedulePreset.scheduleId())) {
-                        return schedulePreset.serialize();
-                    } else {
-                        return config;
-                    }
-                })
+        boolean exists = originalSchedulePreset.stream().anyMatch(config -> Objects.equals(config.get("scheduleId"), schedulePreset.scheduleId()));
+        List<Config> updatedSchedulePreset = originalSchedulePreset.stream()
+                .map(config -> Objects.equals(config.get("scheduleId"), schedulePreset.scheduleId()) ? schedulePreset.serialize() : config)
                 .toList();
+
+        if (!exists) {
+            updatedSchedulePreset = new ArrayList<>(updatedSchedulePreset);
+            updatedSchedulePreset.add(schedulePreset.serialize());
+        }
 
         SCHEDULE_CONFIG.schedulePresets.set(updatedSchedulePreset);
         SCHEDULE_CONFIG.schedulePresets.save();
+    }
+
+    public static boolean createSchedulePreset(String scheduleId) {
+        if (hasSchedulePreset(scheduleId)) {
+            return false;
+        }
+        SchedulePreset base = SchedulePreset.deserialize(SchedulePreset.getDefaultConfig().getFirst());
+        setSchedulePreset(new SchedulePreset(
+                scheduleId,
+                base.enabled(),
+                base.baseIntervalTicks(),
+                base.intervalJitterTicks(),
+                base.maxStarsPerCycle(),
+                base.selectionMode(),
+                base.eventEntries(),
+                base.conditions(),
+                base.state()
+        ));
+        return true;
+    }
+
+    public static boolean deleteSchedulePreset(String scheduleId) {
+        var original = SCHEDULE_CONFIG.schedulePresets.get();
+        List<Config> filtered = original.stream()
+                .filter(config -> !Objects.equals(config.get("scheduleId"), scheduleId))
+                .map(config -> (Config) config)
+                .toList();
+        if (filtered.size() == original.size()) {
+            return false;
+        }
+        SCHEDULE_CONFIG.schedulePresets.set(filtered);
+        SCHEDULE_CONFIG.schedulePresets.save();
+        return true;
     }
 
     public static List<VisualsPreset> getVisualsPresets() {
@@ -105,6 +271,69 @@ public final class FSConfig {
                 .filter(VisualsPreset::isValid)
                 .map(VisualsPreset::deserialize)
                 .toList();
+    }
+
+    public static List<String> getVisualsPresetIds() {
+        return getVisualsPresets().stream().map(VisualsPreset::visualsId).toList();
+    }
+
+    public static boolean hasVisualsPreset(String visualsId) {
+        return getVisualsPresets().stream().anyMatch(preset -> preset.visualsId().equals(visualsId));
+    }
+
+    public static VisualsPreset getVisualsPreset(String visualsId) {
+        return getVisualsPresets().stream()
+                .filter(preset -> preset.visualsId().equals(visualsId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static void setVisualsPreset(VisualsPreset visualsPreset) {
+        var original = VISUALS_CONFIG.visualsPresets.get();
+        boolean exists = original.stream().anyMatch(config -> Objects.equals(config.get("visualsId"), visualsPreset.visualsId()));
+        List<Config> updated = original.stream()
+                .map(config -> Objects.equals(config.get("visualsId"), visualsPreset.visualsId()) ? visualsPreset.serialize() : config)
+                .toList();
+
+        if (!exists) {
+            updated = new ArrayList<>(updated);
+            updated.add(visualsPreset.serialize());
+        }
+
+        VISUALS_CONFIG.visualsPresets.set(updated);
+        VISUALS_CONFIG.visualsPresets.save();
+    }
+
+    public static boolean createVisualsPreset(String visualsId) {
+        if (hasVisualsPreset(visualsId)) {
+            return false;
+        }
+        VisualsPreset base = VisualsPreset.deserialize(VisualsPreset.getDefaultConfig().getFirst());
+        setVisualsPreset(new VisualsPreset(
+                visualsId,
+                base.enabled(),
+                base.particlePreset(),
+                base.fallDistance(),
+                base.emissionIntervalTicks(),
+                base.particlesPerEmission(),
+                base.impact(),
+                base.travelSound()
+        ));
+        return true;
+    }
+
+    public static boolean deleteVisualsPreset(String visualsId) {
+        var original = VISUALS_CONFIG.visualsPresets.get();
+        List<Config> filtered = original.stream()
+                .filter(config -> !Objects.equals(config.get("visualsId"), visualsId))
+                .map(config -> (Config) config)
+                .toList();
+        if (filtered.size() == original.size()) {
+            return false;
+        }
+        VISUALS_CONFIG.visualsPresets.set(filtered);
+        VISUALS_CONFIG.visualsPresets.save();
+        return true;
     }
 
     public static void validateRewardsConfigs() {

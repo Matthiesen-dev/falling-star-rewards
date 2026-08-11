@@ -32,6 +32,7 @@ public final class StatusCommand {
         return 1;
     }
 
+    @SuppressWarnings({"deprecation"})
     private static Component buildStatusTable(boolean full) {
         var mod = FallingStarRewards.INSTANCE;
         var config = FSConfig.SERVER_CONFIG;
@@ -45,7 +46,7 @@ public final class StatusCommand {
                 .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()));
 
         if (full) {
-            builder.addRow("Preset Generation Enabled", Boolean.toString(config.enablePresetGeneration.getAsBoolean()));
+            builder.addRow("Preset Generation (Deprecated)", Boolean.toString(config.enablePresetGeneration.getAsBoolean()));
         }
 
         builder

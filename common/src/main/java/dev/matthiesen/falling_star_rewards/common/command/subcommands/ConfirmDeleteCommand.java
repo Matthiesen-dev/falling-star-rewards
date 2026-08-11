@@ -4,9 +4,9 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
-import dev.matthiesen.matthiesen_core.common.utility.config.ConfigFolderManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -56,14 +56,11 @@ public final class ConfirmDeleteCommand {
     }
 
     private static boolean isDeleted(PresetDeletionRequest request) {
-        ConfigFolderManager<?> manager = switch (request.presetType()) {
-            case EVENT -> FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
-            case REWARDS -> FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
-            case VISUALS -> FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager();
-            case SCHEDULE -> FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager();
+        return switch (request.presetType()) {
+            case EVENT -> FSConfig.deleteEventPreset(request.presetName());
+            case REWARDS -> FSConfig.deleteRewardPreset(request.presetName());
+            case VISUALS -> FSConfig.deleteVisualsPreset(request.presetName());
+            case SCHEDULE -> FSConfig.deleteSchedulePreset(request.presetName());
         };
-
-        // Delete the preset
-        return manager.deleteConfig(request.presetName());
     }
 }
