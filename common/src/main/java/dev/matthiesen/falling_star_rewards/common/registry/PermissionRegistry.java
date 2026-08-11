@@ -10,67 +10,67 @@ import net.minecraft.commands.CommandSourceStack;
 public final class PermissionRegistry {
     public static Permission COMMAND_FALLINGSTAR = register(
             "command.fallingstar",
-            FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar.getAsInt()
+            FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_HELP = register(
             "command.fallingstar.help",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_help.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_help.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_RELOAD = register(
             "command.fallingstar.reload",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_reload.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_reload.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_CLEANUP = register(
             "command.fallingstar.cleanup",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_cleanup.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_cleanup.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_STATUS = register(
             "command.fallingstar.status",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_status.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_status.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_FORCE = register(
             "command.fallingstar.force",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_force.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_force.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_CONFIRM_DELETE = register(
             "command.fallingstar.confirm_delete",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_confirm_delete.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_confirm_delete.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_ENABLE = register(
             "command.fallingstar.preset.enable",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_enable.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_enable.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_DISABLE = register(
             "command.fallingstar.preset.disable",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_disable.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_disable.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_LIST = register(
             "command.fallingstar.preset.list",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_list.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_list.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_CREATE = register(
             "command.fallingstar.preset.create",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_create.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_create.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_DELETE = register(
             "command.fallingstar.preset.delete",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_delete.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_delete.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_INFO = register(
             "command.fallingstar.preset.info",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_info.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_info.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_SET = register(
             "command.fallingstar.preset.set",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_set.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_set.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_ADD = register(
             "command.fallingstar.preset.add",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_add.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_add.get().getLevel()
     );
     public static Permission COMMAND_FALLINGSTAR_PRESET_REMOVE = register(
             "command.fallingstar.preset.remove",
-        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_remove.getAsInt()
+        FSConfig.PERMISSIONS_START_CONFIG.command_fallingstar_preset_remove.get().getLevel()
     );
 
     public static class Permissions {
