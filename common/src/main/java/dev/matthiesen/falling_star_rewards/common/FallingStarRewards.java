@@ -1,15 +1,16 @@
 package dev.matthiesen.falling_star_rewards.common;
 
-import dev.matthiesen.common.matthiesen_lib_api.abstracts.AbstractCommonMod;
-import dev.matthiesen.common.matthiesen_lib_api.core.interfaces.MatthiesenLibServerEventHandler;
-import dev.matthiesen.common.matthiesen_lib_api.permission.Permission;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.config.FallingStarsConfigManager;
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
-import dev.matthiesen.falling_star_rewards.common.config.PermissionsConfig;
 import dev.matthiesen.falling_star_rewards.common.registry.PermissionRegistry;
 import dev.matthiesen.falling_star_rewards.common.runtime.RuntimeManager;
 import dev.matthiesen.libs.faststats.Token;
+import dev.matthiesen.matthiesen_core.common.AbstractCommonMod;
+import dev.matthiesen.matthiesen_core.common.api.events.PlatformEvents;
+import dev.matthiesen.matthiesen_core.common.api.events.server.ServerEvent;
+import dev.matthiesen.matthiesen_core.common.api.permissions.Permission;
+import dev.matthiesen.matthiesen_core.common.api.platform.loader.ModConfigType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
@@ -43,13 +44,39 @@ public final class FallingStarRewards extends AbstractCommonMod {
     @Override
     public void initialize() {
         super.initialize();
-        CONFIG_MANAGER.init();
 
-        reload().run();
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, "falling_star_rewards/server.toml");
+        registerModConfig(MOD_ID, ModConfigType.STARTUP, FSConfig.PERMISSIONS_START_SPEC, "falling_star_rewards/permissions.toml");
+
         PermissionRegistry.init();
-        registerServerEventHandler(getServerEventHandler());
-        registerCommand(FallingStarCommand.CMD);
+
+        getCommandsRegistryManager().registerCommand(FallingStarCommand.CMD);
+
+        PlatformEvents.SERVER_STARTED.subscribe(this::onServerStarted);
+        PlatformEvents.SERVER_RELOAD.subscribe(this::onServerReload);
+        PlatformEvents.SERVER_END_TICK.subscribe(this::onServerEndTick);
+
         createInfoLog("Initializing Falling Star Rewards");
+    }
+
+    private boolean isServerRunning = false;
+
+    public void onServerStarted(ServerEvent.Started event) {
+        CONFIG_MANAGER.init();
+        reload().run();
+        isServerRunning = true;
+    }
+
+    public void onServerReload(ServerEvent.Reload event) {
+        if (!isServerRunning) return;
+        reload().run();
+    }
+
+    public void onServerEndTick(ServerEvent.EndTick event) {
+        boolean enabled = FSConfig.SERVER_CONFIG.enabled.getAsBoolean();
+        if (!enabled) return;
+        if (!isServerRunning) return;
+        RuntimeManager.tick(event.server());
     }
 
     @Override
@@ -57,30 +84,19 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return METRICS_TOKEN;
     }
 
-    @Override
     public Runnable reload() {
         return () -> {
             loadConfigs();
-            MainConfig config = getMainConfig();
             CONFIG_MANAGER.validateRewardsConfigs();
-            createInfoLog("Reloaded Config (enabled=" + config.enabled + ")");
+            createInfoLog("Reloaded Config (enabled=" + FSConfig.SERVER_CONFIG.enabled.getAsBoolean() + ")");
         };
     }
 
     public void loadConfigs() {
-        CONFIG_MANAGER.getMainConfigManager().loadConfig();
         CONFIG_MANAGER.getEventsConfigManager().loadConfigs();
         CONFIG_MANAGER.getRewardsConfigManager().loadConfigs();
         CONFIG_MANAGER.getVisualsConfigManager().loadConfigs();
         CONFIG_MANAGER.getSchedulesConfigManager().loadConfigs();
-    }
-
-    public MainConfig getMainConfig() {
-        return CONFIG_MANAGER.getMainConfigManager().getConfig();
-    }
-
-    public PermissionsConfig getPermissionsConfig() {
-        return CONFIG_MANAGER.getPermissionsConfigManager().getConfig();
     }
 
     public FallingStarsConfigManager getConfigManager() {
@@ -100,8 +116,7 @@ public final class FallingStarRewards extends AbstractCommonMod {
     }
 
     public int forceCycle(MinecraftServer server, String presetId, boolean bypassActivationChecks) {
-        MainConfig config = getMainConfig();
-        if (!config.enabled) {
+        if (!FSConfig.SERVER_CONFIG.enabled.getAsBoolean()) {
             createInfoLog("Cannot force cycle - mod is disabled");
             return 0;
         }
@@ -110,31 +125,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
             createWarnLog("No event presets available to start a cycle");
             return 0;
         }
-        return RuntimeManager.runCycle(server, config, preset, bypassActivationChecks);
-    }
-
-    public MatthiesenLibServerEventHandler getServerEventHandler() {
-        return new MatthiesenLibServerEventHandler() {
-            @Override
-            public void onServerStart(MinecraftServer server) {
-                createInfoLog("Server Started");
-            }
-
-            @Override
-            public void onServerTick(MinecraftServer server) {
-                MainConfig config = getMainConfig();
-                if (!config.enabled) return;
-                RuntimeManager.tick(server, config);
-            }
-
-            @Override
-            public void onServerStop(MinecraftServer server) {
-                createInfoLog("Server Stopped");
-            }
-        };
-    }
-
-    public void createWarnLog(String message) {
-        getLogger().warn(message);
+        return RuntimeManager.runCycle(server, preset, bypassActivationChecks);
     }
 }

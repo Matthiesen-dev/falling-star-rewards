@@ -1,7 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common.config.presets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 public final class VisualsPresetConfig {
@@ -74,10 +72,4 @@ public final class VisualsPresetConfig {
         @SerializedName("soundPitchMax")
         public float soundPitchMax = 1.2F;
     }
-
-    @SuppressWarnings("unused")
-    public static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()
-            .setPrettyPrinting()
-            .create();
 }

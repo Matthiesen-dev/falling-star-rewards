@@ -1,7 +1,5 @@
 package dev.matthiesen.falling_star_rewards.common.config.presets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -60,10 +58,4 @@ public final class SchedulePresetConfig {
         @SerializedName("rotationCursor")
         public int rotationCursor = 0;
     }
-
-    @SuppressWarnings("unused")
-    public static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()
-            .setPrettyPrinting()
-            .create();
 }

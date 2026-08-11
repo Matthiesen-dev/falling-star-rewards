@@ -1,7 +1,7 @@
 # Falling Star Rewards
 
 <div>
-  <img src="https://mods.matthiesen.dev/badges/matthiesenLibAPI.svg" alt="Matthiesen Lib API">
+  <img src="https://mods.matthiesen.dev/badges/matthiesenCore.svg" alt="Matthiesen Core">
 </div>
 
 A Server-side mod that adds falling stars to the world, which can drop a variety of items where they land. The mod is designed 
@@ -17,7 +17,10 @@ can customize the configuration files to your liking or use the in-game commands
 Check the docs link below for more information on how to customize the mod and make the most out of its features.
 
 ## Requirements
-- [Matthiesen Lib API](https://modrinth.com/mod/matthiesen-lib-api)
+
+- [Matthiesen Core](https://modrinth.com/mod/matthiesen-core)
+- [Fabric API](https://modrinth.com/mod/fabric-api) (Fabric only)
+- [Forge Config API Port](https://modrinth.com/mod/forge-config-api-port) (Fabric only)
 
 ## Docs
 
@@ -37,7 +40,7 @@ how this mod is being used and improve it over time. You can learn more about th
 
 You can also view the data collected by this mod on the [FastStats: Falling Star Rewards](https://faststats.dev/project/falling-star-rewards) page.
 
-To opt out of this data collection, set the `enabled` property to `false` in the `<game_directory>/config/matthiesen_lib_api/metrics.properties` file.
+To opt out of this data collection, set the `enabled` property to `false` in the `<game_directory>/config/matthiesen_core/metrics.properties` file.
 
 ## License
 

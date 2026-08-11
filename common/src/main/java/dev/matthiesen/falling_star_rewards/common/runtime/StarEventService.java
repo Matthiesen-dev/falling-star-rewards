@@ -1,15 +1,15 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.matthiesen.common.matthiesen_lib_api.utility.RunSlashCommand;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
-import dev.matthiesen.falling_star_rewards.common.config.MainConfig;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
 import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
 import dev.matthiesen.falling_star_rewards.common.interfaces.EventCommandContext;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
+import dev.matthiesen.matthiesen_core.common.utility.commands.RunSlashCommand;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -112,13 +112,12 @@ public final class StarEventService {
 
     public int runCycle(
             MinecraftServer server,
-            MainConfig mainConfig,
             LoadedPreset presetConfig,
             boolean bypassActivationChecks,
             SchedulePresetConfig scheduleConfig
     ) {
         int cappedMaxStars = scheduleConfig == null ? 1 : Math.max(1, scheduleConfig.maxStarsPerCycle);
-        int maxActiveDrops = Math.max(1, mainConfig.claim.maxActiveDrops);
+        int maxActiveDrops = Math.max(1, FSConfig.SERVER_CONFIG.claim_maxActiveDrops.getAsInt());
         if (activeDrops.size() >= maxActiveDrops) {
             return 0;
         }
@@ -141,7 +140,7 @@ public final class StarEventService {
                 break;
             }
 
-            if (spawnStarNearPlayer(player, mainConfig, presetConfig)) {
+            if (spawnStarNearPlayer(player, presetConfig)) {
                 spawned++;
             }
 
@@ -190,7 +189,7 @@ public final class StarEventService {
         return !conditions.requireSurfaceAccess || level.canSeeSky(player.blockPosition());
     }
 
-    private boolean spawnStarNearPlayer(ServerPlayer player, MainConfig mainConfig, LoadedPreset presetConfig) {
+    private boolean spawnStarNearPlayer(ServerPlayer player, LoadedPreset presetConfig) {
         ServerLevel level = player.serverLevel();
         int maxAttempts = Math.max(1, presetConfig.eventConfig.spawn.maxLocationAttempts);
 
@@ -229,9 +228,9 @@ public final class StarEventService {
                     spawnPos.getZ() + 0.5,
                     stack
             );
-            itemEntity.setPickUpDelay(Math.max(0, mainConfig.claim.pickupDelayTicks));
+            itemEntity.setPickUpDelay(Math.max(0, FSConfig.SERVER_CONFIG.claim_pickupDelayTicks.getAsInt()));
             level.addFreshEntity(itemEntity);
-            int lifeTicks = Math.max(1, mainConfig.claim.lifeTicks);
+            int lifeTicks = Math.max(1, FSConfig.SERVER_CONFIG.claim_lifeTicks.getAsInt());
             long startTick = level.getServer().getTickCount();
             activeDrops.put(
                     itemEntity.getUUID(),
@@ -249,16 +248,13 @@ public final class StarEventService {
     }
 
     private void runEventCommands(EventCommandContext context) {
-        var server = FallingStarRewards.INSTANCE.getMinecraftServer();
-        if (server == null) return;
-
         var commandList = context.presetConfig().eventConfig.commands;
         if (commandList.isEmpty()) return;
 
         for (String command : commandList) {
             String normalizedCommand = context.ensureNoPreSlash(command);
             String processedCommand = context.processPlaceholders(normalizedCommand);
-            RunSlashCommand.asServer(server, processedCommand);
+            RunSlashCommand.asServer(processedCommand);
         }
     }
 
