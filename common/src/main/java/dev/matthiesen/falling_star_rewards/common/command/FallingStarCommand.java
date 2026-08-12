@@ -5,11 +5,11 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
 import dev.matthiesen.falling_star_rewards.common.command.subcommands.*;
 import dev.matthiesen.matthiesen_core.common.api.command.CoreCommand;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
-import dev.matthiesen.matthiesen_core.common.utility.config.ConfigFolderManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -17,6 +17,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -74,29 +75,29 @@ public final class FallingStarCommand implements CoreCommand {
         return DELETION_REQUESTS.remove(key);
     }
 
-    public static CompletableFuture<Suggestions> getPresetList(SuggestionsBuilder builder, ConfigFolderManager<?> manager) {
-        manager.getConfigs().keySet().forEach(builder::suggest);
+    public static CompletableFuture<Suggestions> getPresetList(SuggestionsBuilder builder, List<String> presetIds) {
+        presetIds.forEach(builder::suggest);
         return builder.buildFuture();
     }
 
     @SuppressWarnings("unused")
     public static CompletableFuture<Suggestions> getEventsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager());
+        return getPresetList(builder, FSConfig.getEventPresetIds());
     }
 
     @SuppressWarnings("unused")
     public static CompletableFuture<Suggestions> getRewardsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager());
+        return getPresetList(builder, FSConfig.getRewardPresetIds());
     }
 
     @SuppressWarnings("unused")
     public static CompletableFuture<Suggestions> getVisualsPresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager());
+        return getPresetList(builder, FSConfig.getVisualsPresetIds());
     }
 
     @SuppressWarnings("unused")
     public static CompletableFuture<Suggestions> getSchedulePresetLists(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        return getPresetList(builder, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager());
+        return getPresetList(builder, FSConfig.getSchedulePresetIds());
     }
 
     @Override

@@ -8,7 +8,6 @@ public final class ServerConfig {
 
     // General Options
     public ModConfigSpec.BooleanValue enabled;
-    public ModConfigSpec.BooleanValue enablePresetGeneration;
     public ModConfigSpec.ConfigValue<List<? extends String>> enabledSchedules;
 
     // Claim Options
@@ -20,8 +19,6 @@ public final class ServerConfig {
         builder.comment("General configuration settings").push("general");
         enabled = builder.comment("Enable or disable Falling Star Rewards")
                 .define("enabled", true);
-        enablePresetGeneration = builder.comment("Enable or disable the generation of default presets")
-                .define("enablePresetGeneration", true);
         enabledSchedules = builder.comment("List of enabled schedules for Falling Star Rewards")
                 .defineList(
                         "enabledSchedules",

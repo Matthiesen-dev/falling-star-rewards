@@ -44,15 +44,11 @@ public final class StatusCommand {
                 .addRow("Next Cycle Tick", Long.toString(mod.getNextCycleTick()))
                 .addRow("Active Drops", Integer.toString(mod.getActiveDropCount()));
 
-        if (full) {
-            builder.addRow("Preset Generation Enabled", Boolean.toString(config.enablePresetGeneration.getAsBoolean()));
-        }
-
         builder
                 .addSection("Presets")
-                .addRow("Available Events", Integer.toString(mod.getConfigManager().calculateEventPresets()))
-                .addRow("Available Rewards", Integer.toString(mod.getConfigManager().calculateRewardPresets()))
-                .addRow("Available Schedules", Integer.toString(mod.getConfigManager().calculateSchedulePresets()));
+                .addRow("Available Events", Integer.toString(FSConfig.calculateEventPresets()))
+                .addRow("Available Rewards", Integer.toString(FSConfig.calculateRewardPresets()))
+                .addRow("Available Schedules", Integer.toString(FSConfig.calculateSchedulePresets()));
 
         if (full) {
             builder

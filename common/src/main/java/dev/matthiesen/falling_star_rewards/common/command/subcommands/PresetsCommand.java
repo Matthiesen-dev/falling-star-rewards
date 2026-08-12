@@ -8,16 +8,15 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
-import dev.matthiesen.falling_star_rewards.common.interfaces.NamedPreset;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
+import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetTypes;
-import dev.matthiesen.falling_star_rewards.common.config.presets.EventPresetConfig;
-import dev.matthiesen.falling_star_rewards.common.config.presets.RewardsPresetConfig;
-import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
-import dev.matthiesen.falling_star_rewards.common.config.presets.VisualsPresetConfig;
 import dev.matthiesen.matthiesen_core.common.utility.chat.ChatTableBuilder;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
-import dev.matthiesen.matthiesen_core.common.utility.config.ConfigFolderManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -30,11 +29,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.CustomModelData;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public final class PresetsCommand {
     public static CommandBuilder getPresetSubCommand() {
@@ -255,85 +256,154 @@ public final class PresetsCommand {
         );
     }
 
-    public static <T> void updateConfigAndSave(ConfigFolderManager<T> manager, String preset, T config) {
-        manager.setConfig(preset, config);
-        manager.saveConfig(preset);
-    }
-
     public static Component presetEnabledState(String preset, boolean value) {
         return Component.literal("Preset " + preset + " has been " + (value ? "enabled" : "disabled") + ".").withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> void presetEnableDisable(CommandContext<CommandSourceStack> context, ConfigFolderManager<T> manager, boolean value) {
-        String preset = StringArgumentType.getString(context, "name");
-        var presetConfig = manager.getConfig(preset);
-        switch (presetConfig) {
-            case EventPresetConfig eventPresetConfig -> {
-                eventPresetConfig.enabled = value;
-                updateConfigAndSave(manager, preset, (T) eventPresetConfig);
-                context.getSource().sendSystemMessage(presetEnabledState(preset, value));
-            }
-            case VisualsPresetConfig visualsPresetConfig -> {
-                visualsPresetConfig.enabled = value;
-                updateConfigAndSave(manager, preset, (T) visualsPresetConfig);
-                context.getSource().sendSystemMessage(presetEnabledState(preset, value));
-            }
-            case SchedulePresetConfig schedulePresetConfig -> {
-                schedulePresetConfig.enabled = value;
-                updateConfigAndSave(manager, preset, (T) schedulePresetConfig);
-                context.getSource().sendSystemMessage(presetEnabledState(preset, value));
-            }
-            default -> context.getSource().sendFailure(Component.literal("Preset not found: " + preset).withStyle(ChatFormatting.RED));
-        }
-    }
-
     public static int presetEventEnable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), true);
+        String presetId = StringArgumentType.getString(context, "name");
+        EventPreset preset = FSConfig.getEventPreset(presetId);
+        if (preset == null) {
+            context.getSource().sendFailure(Component.literal("Event preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        FSConfig.setEventPreset(new EventPreset(
+                preset.eventId(),
+                true,
+                preset.rewardsPresetId(),
+                preset.visualsPresetId(),
+                preset.commands(),
+                preset.spawn(),
+                preset.announcement()
+        ));
+        context.getSource().sendSystemMessage(presetEnabledState(presetId, true));
         return 1;
     }
 
     public static int presetVisualsEnable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), true);
+        String presetId = StringArgumentType.getString(context, "name");
+        VisualsPreset preset = FSConfig.getVisualsPreset(presetId);
+        if (preset == null) {
+            context.getSource().sendFailure(Component.literal("Visuals preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        FSConfig.setVisualsPreset(new VisualsPreset(
+                preset.visualsId(),
+                true,
+                preset.particlePreset(),
+                preset.fallDistance(),
+                preset.emissionIntervalTicks(),
+                preset.particlesPerEmission(),
+                preset.impact(),
+                preset.travelSound()
+        ));
+        context.getSource().sendSystemMessage(presetEnabledState(presetId, true));
         return 1;
     }
 
     public static int presetEventDisable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), false);
+        String presetId = StringArgumentType.getString(context, "name");
+        EventPreset preset = FSConfig.getEventPreset(presetId);
+        if (preset == null) {
+            context.getSource().sendFailure(Component.literal("Event preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        FSConfig.setEventPreset(new EventPreset(
+                preset.eventId(),
+                false,
+                preset.rewardsPresetId(),
+                preset.visualsPresetId(),
+                preset.commands(),
+                preset.spawn(),
+                preset.announcement()
+        ));
+        context.getSource().sendSystemMessage(presetEnabledState(presetId, false));
         return 1;
     }
 
     public static int presetVisualsDisable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), false);
+        String presetId = StringArgumentType.getString(context, "name");
+        VisualsPreset preset = FSConfig.getVisualsPreset(presetId);
+        if (preset == null) {
+            context.getSource().sendFailure(Component.literal("Visuals preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        FSConfig.setVisualsPreset(new VisualsPreset(
+                preset.visualsId(),
+                false,
+                preset.particlePreset(),
+                preset.fallDistance(),
+                preset.emissionIntervalTicks(),
+                preset.particlesPerEmission(),
+                preset.impact(),
+                preset.travelSound()
+        ));
+        context.getSource().sendSystemMessage(presetEnabledState(presetId, false));
         return 1;
     }
 
     public static int presetScheduleEnable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), true);
+        String presetId = StringArgumentType.getString(context, "name");
+        SchedulePreset preset = FSConfig.getSchedulePreset(presetId);
+        if (preset == null) {
+            context.getSource().sendFailure(Component.literal("Schedule preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        FSConfig.setSchedulePreset(new SchedulePreset(
+                preset.scheduleId(),
+                true,
+                preset.baseIntervalTicks(),
+                preset.intervalJitterTicks(),
+                preset.maxStarsPerCycle(),
+                preset.selectionMode(),
+                preset.eventEntries(),
+                preset.conditions(),
+                preset.state()
+        ));
+        context.getSource().sendSystemMessage(presetEnabledState(presetId, true));
         return 1;
     }
 
     public static int presetScheduleDisable(CommandContext<CommandSourceStack> context) {
-        presetEnableDisable(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), false);
+        String presetId = StringArgumentType.getString(context, "name");
+        SchedulePreset preset = FSConfig.getSchedulePreset(presetId);
+        if (preset == null) {
+            context.getSource().sendFailure(Component.literal("Schedule preset not found: " + presetId).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+        FSConfig.setSchedulePreset(new SchedulePreset(
+                preset.scheduleId(),
+                false,
+                preset.baseIntervalTicks(),
+                preset.intervalJitterTicks(),
+                preset.maxStarsPerCycle(),
+                preset.selectionMode(),
+                preset.eventEntries(),
+                preset.conditions(),
+                preset.state()
+        ));
+        context.getSource().sendSystemMessage(presetEnabledState(presetId, false));
         return 1;
     }
 
     public static int presetEventsList(CommandContext<CommandSourceStack> context) {
         return presetList(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(),
+                FSConfig.getEventPresets(),
                 "No event presets found.",
                 "Event Presets",
-                config -> config.enabled ? "Enabled" : "Disabled"
+                EventPreset::eventId,
+                config -> config.enabled() ? "Enabled" : "Disabled"
         );
     }
 
     public static int presetRewardsList(CommandContext<CommandSourceStack> context) {
         return presetList(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(),
+                FSConfig.getRewardPresets(),
                 "No reward presets found.",
                 "Reward Presets",
+                RewardPreset::rewardId,
                 config -> "Enabled"
         );
     }
@@ -341,70 +411,72 @@ public final class PresetsCommand {
     public static int presetVisualsList(CommandContext<CommandSourceStack> context) {
         return presetList(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(),
+                FSConfig.getVisualsPresets(),
                 "No visuals presets found.",
                 "Visual Presets",
-                config -> config.enabled ? "Enabled" : "Disabled"
+                VisualsPreset::visualsId,
+                config -> config.enabled() ? "Enabled" : "Disabled"
         );
     }
 
     public static int presetSchedulesList(CommandContext<CommandSourceStack> context) {
         return presetList(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(),
+                FSConfig.getSchedulePresets(),
                 "No schedule presets found.",
                 "Schedule Presets",
-                config -> config.enabled ? "Enabled" : "Disabled"
+                SchedulePreset::scheduleId,
+                config -> config.enabled() ? "Enabled" : "Disabled"
         );
     }
 
     @SuppressWarnings("SameReturnValue")
     public static <T> int presetList(
             CommandContext<CommandSourceStack> context,
-            ConfigFolderManager<T> manager,
+            List<T> presets,
             String emptyMessage,
             String tableTitle,
+            Function<T, String> idResolver,
             Function<T, String> statusResolver
     ) {
-        if (manager.getConfigs().isEmpty()) {
+        if (presets.isEmpty()) {
             context.getSource().sendSystemMessage(Component.literal(emptyMessage).withStyle(ChatFormatting.YELLOW));
             return 1;
         }
 
         var chatMessage = new ChatTableBuilder(tableTitle);
-        manager.getConfigs().forEach((name, config) -> chatMessage.addRow(name, statusResolver.apply(config)));
+        presets.forEach(config -> chatMessage.addRow(idResolver.apply(config), statusResolver.apply(config)));
         context.getSource().sendSystemMessage(chatMessage.build());
         return 1;
     }
 
     public static int presetEventCreate(CommandContext<CommandSourceStack> context) {
-        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), "event", "Event");
+        return presetCreate(context, FSConfig::createEventPreset, "event", "Event");
     }
 
     public static int presetRewardsCreate(CommandContext<CommandSourceStack> context) {
-        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(), "reward", "Reward");
+        return presetCreate(context, FSConfig::createRewardPreset, "reward", "Reward");
     }
 
     public static int presetVisualsCreate(CommandContext<CommandSourceStack> context) {
-        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), "visuals", "Visuals");
+        return presetCreate(context, FSConfig::createVisualsPreset, "visuals", "Visuals");
     }
 
     public static int presetScheduleCreate(CommandContext<CommandSourceStack> context) {
-        return presetCreate(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), "schedule", "Schedule");
+        return presetCreate(context, FSConfig::createSchedulePreset, "schedule", "Schedule");
     }
 
-    public static <T> int presetCreate(
+    public static int presetCreate(
             CommandContext<CommandSourceStack> context,
-            ConfigFolderManager<T> manager,
+            Function<String, Boolean> creator,
             String presetType,
             String presetTitle
     ) {
         String name = StringArgumentType.getString(context, "name");
-        if (manager.getConfigs().containsKey(name)) {
+        if (!creator.apply(name)) {
             context.getSource().sendFailure(Component.literal("A " + presetType + " preset with that name already exists.").withStyle(ChatFormatting.RED));
             return 0;
         }
-        manager.loadConfig(name);
         context.getSource().sendSystemMessage(Component.literal(presetTitle + " preset '" + name + "' created successfully.").withStyle(ChatFormatting.GREEN));
         return 1;
     }
@@ -412,9 +484,17 @@ public final class PresetsCommand {
     public static int presetEventSetRewards(CommandContext<CommandSourceStack> context) {
         return presetEventSet(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(),
                 "reward",
-                (eventConfig, presetId) -> eventConfig.rewardsPresetId = presetId,
+                FSConfig::hasRewardPreset,
+                (eventPreset, presetId) -> new EventPreset(
+                        eventPreset.eventId(),
+                        eventPreset.enabled(),
+                        presetId,
+                        eventPreset.visualsPresetId(),
+                        eventPreset.commands(),
+                        eventPreset.spawn(),
+                        eventPreset.announcement()
+                ),
                 "Rewards"
         );
     }
@@ -422,37 +502,43 @@ public final class PresetsCommand {
     public static int presetEventSetVisuals(CommandContext<CommandSourceStack> context) {
         return presetEventSet(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(),
                 "visuals",
-                (eventConfig, presetId) -> eventConfig.visualsPresetId = presetId,
+                FSConfig::hasVisualsPreset,
+                (eventPreset, presetId) -> new EventPreset(
+                        eventPreset.eventId(),
+                        eventPreset.enabled(),
+                        eventPreset.rewardsPresetId(),
+                        presetId,
+                        eventPreset.commands(),
+                        eventPreset.spawn(),
+                        eventPreset.announcement()
+                ),
                 "Visuals"
         );
     }
 
-    public static <T> int presetEventSet(
+    public static int presetEventSet(
             CommandContext<CommandSourceStack> context,
-            ConfigFolderManager<T> targetManager,
             String targetType,
-            BiConsumer<EventPresetConfig, String> setter,
+            Predicate<String> targetExists,
+            BiFunction<EventPreset, String, EventPreset> setter,
             String label
     ) {
         String eventPresetId = StringArgumentType.getString(context, "name");
         String presetId = StringArgumentType.getString(context, "preset_id");
 
-        var eventManager = FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager();
-        if (!eventManager.hasConfig(eventPresetId)) {
+        EventPreset eventPreset = FSConfig.getEventPreset(eventPresetId);
+        if (eventPreset == null) {
             context.getSource().sendFailure(Component.literal("Event preset not found: " + eventPresetId).withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        if (!targetManager.hasConfig(presetId)) {
+        if (!targetExists.test(presetId)) {
             context.getSource().sendFailure(Component.literal(capitalize(targetType) + " preset not found: " + presetId).withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        EventPresetConfig eventConfig = eventManager.getConfig(eventPresetId);
-        setter.accept(eventConfig, presetId);
-        updateConfigAndSave(eventManager, eventPresetId, eventConfig);
+        FSConfig.setEventPreset(setter.apply(eventPreset, presetId));
 
         context.getSource().sendSystemMessage(Component.literal(
                 label + " preset for event '" + eventPresetId + "' has been set to '" + presetId + "'."
@@ -470,7 +556,7 @@ public final class PresetsCommand {
     public static int presetEventsInfo(CommandContext<CommandSourceStack> context) {
         return presetInfo(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(),
+                FSConfig::getEventPreset,
                 "event",
                 PresetsCommand::buildEventPresetInfo
         );
@@ -479,7 +565,7 @@ public final class PresetsCommand {
     public static int presetRewardsInfo(CommandContext<CommandSourceStack> context) {
         return presetInfo(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(),
+                FSConfig::getRewardPreset,
                 "reward",
                 PresetsCommand::buildRewardPresetInfo
         );
@@ -488,7 +574,7 @@ public final class PresetsCommand {
     public static int presetVisualsInfo(CommandContext<CommandSourceStack> context) {
         return presetInfo(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(),
+                FSConfig::getVisualsPreset,
                 "visuals",
                 PresetsCommand::buildVisualsPresetInfo
         );
@@ -497,7 +583,7 @@ public final class PresetsCommand {
     public static int presetSchedulesInfo(CommandContext<CommandSourceStack> context) {
         return presetInfo(
                 context,
-                FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(),
+                FSConfig::getSchedulePreset,
                 "schedule",
                 PresetsCommand::buildSchedulePresetInfo
         );
@@ -505,105 +591,103 @@ public final class PresetsCommand {
 
     public static <T> int presetInfo(
             CommandContext<CommandSourceStack> context,
-            ConfigFolderManager<T> manager,
+            Function<String, T> getter,
             String presetType,
-            Function<NamedPreset<T>, Component> infoBuilder
+            Function<T, Component> infoBuilder
     ) {
         String name = StringArgumentType.getString(context, "name");
-        if (!manager.hasConfig(name)) {
+        T config = getter.apply(name);
+        if (config == null) {
             context.getSource().sendFailure(Component.literal(capitalize(presetType) + " preset not found: " + name).withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        T config = manager.getConfig(name);
-        context.getSource().sendSystemMessage(infoBuilder.apply(new NamedPreset<>(name, config)));
+        context.getSource().sendSystemMessage(infoBuilder.apply(config));
         return 1;
     }
 
-    public static Component buildEventPresetInfo(NamedPreset<EventPresetConfig> preset) {
-        EventPresetConfig config = preset.config();
-        return new ChatTableBuilder("Event Preset: " + preset.name())
+    public static Component buildEventPresetInfo(EventPreset preset) {
+        return new ChatTableBuilder("Event Preset: " + preset.eventId())
                 .addSection("General")
-                .addRow("Enabled", Boolean.toString(config.enabled))
-                .addRow("Rewards Preset", config.rewardsPresetId)
-                .addRow("Visuals Preset", config.visualsPresetId)
+                .addRow("Enabled", Boolean.toString(preset.enabled()))
+                .addRow("Rewards Preset", preset.rewardsPresetId())
+                .addRow("Visuals Preset", preset.visualsPresetId())
                 .addSection("Spawn")
-                .addRow("Target Scope", config.spawn.targetScope)
-                .addRow("Min Radius", Integer.toString(config.spawn.minRadius))
-                .addRow("Max Radius", Integer.toString(config.spawn.maxRadius))
-                .addRow("Max Location Attempts", Integer.toString(config.spawn.maxLocationAttempts))
-                .addRow("Allow Water Spawns", Boolean.toString(config.spawn.allowWaterSpawns))
+                .addRow("Target Scope", preset.spawn().targetScope().name().toLowerCase(Locale.ROOT))
+                .addRow("Min Radius", Integer.toString(preset.spawn().minRadius()))
+                .addRow("Max Radius", Integer.toString(preset.spawn().maxRadius()))
+                .addRow("Max Location Attempts", Integer.toString(preset.spawn().maxLocationAttempts()))
+                .addRow("Allow Water Spawns", Boolean.toString(preset.spawn().allowWaterSpawns()))
                 .build();
     }
 
-    public static Component buildSchedulePresetInfo(NamedPreset<SchedulePresetConfig> preset) {
-        SchedulePresetConfig config = preset.config();
-        SchedulePresetConfig.Conditions conditions = config.conditions == null ? new SchedulePresetConfig.Conditions() : config.conditions;
-        SchedulePresetConfig.State state = config.state == null ? new SchedulePresetConfig.State() : config.state;
-        return new ChatTableBuilder("Schedule Preset: " + preset.name())
+    public static Component buildSchedulePresetInfo(SchedulePreset preset) {
+        SchedulePreset.Conditions conditions = preset.conditions();
+        SchedulePreset.State state = preset.state();
+        return new ChatTableBuilder("Schedule Preset: " + preset.scheduleId())
                 .addSection("General")
-                .addRow("Enabled", Boolean.toString(config.enabled))
-                .addRow("Base Tick Interval", Integer.toString(config.baseIntervalTicks))
-                .addRow("Interval Jitter", Integer.toString(config.intervalJitterTicks))
-                .addRow("Max Stars Per Cycle", Integer.toString(config.maxStarsPerCycle))
-                .addRow("Selection Mode", config.selectionMode)
-                .addRow("Event Entries", Integer.toString(config.eventEntries == null ? 0 : config.eventEntries.size()))
+                .addRow("Enabled", Boolean.toString(preset.enabled()))
+                .addRow("Base Tick Interval", Integer.toString(preset.baseIntervalTicks()))
+                .addRow("Interval Jitter", Integer.toString(preset.intervalJitterTicks()))
+                .addRow("Max Stars Per Cycle", Integer.toString(preset.maxStarsPerCycle()))
+                .addRow("Selection Mode", preset.selectionMode().name().toLowerCase(Locale.ROOT))
+                .addRow("Event Entries", Integer.toString(preset.eventEntries() == null ? 0 : preset.eventEntries().size()))
                 .addSection("Conditions")
-                .addRow("Time Mode", conditions.timeMode)
-                .addRow("Require Surface Access", Boolean.toString(conditions.requireSurfaceAccess))
-                .addRow("Weather Mode", conditions.weatherMode)
-                .addRow("Moon Phases", conditions.moonPhases == null || conditions.moonPhases.isEmpty()
+                .addRow("Time Mode", conditions.timeMode().name().toLowerCase(Locale.ROOT))
+                .addRow("Require Surface Access", Boolean.toString(conditions.requireSurfaceAccess()))
+                .addRow("Weather Mode", conditions.weatherMode().name().toLowerCase(Locale.ROOT))
+                .addRow("Moon Phases", conditions.moonPhases() == null || conditions.moonPhases().isEmpty()
                         ? "Any"
-                        : String.join(", ", conditions.moonPhases))
+                        : String.join(", ", conditions.moonPhases()))
                 .addSection("State")
                 .addRow("Rotation Cursor", Integer.toString(state.rotationCursor))
                 .build();
     }
 
-    public static Component buildVisualsPresetInfo(NamedPreset<VisualsPresetConfig> preset) {
-        VisualsPresetConfig config = preset.config();
-        return new ChatTableBuilder("Visuals Preset: " + preset.name())
+    public static Component buildVisualsPresetInfo(VisualsPreset preset) {
+        return new ChatTableBuilder("Visuals Preset: " + preset.visualsId())
                 .addSection("General")
-                .addRow("Enabled", Boolean.toString(config.enabled))
-                .addRow("Particle Preset", config.particlePreset)
-                .addRow("Fall Distance", Integer.toString(config.fallDistance))
-                .addRow("Emission Interval Ticks", Integer.toString(config.emissionIntervalTicks))
-                .addRow("Particles Per Emission", Integer.toString(config.particlesPerEmission))
+                .addRow("Enabled", Boolean.toString(preset.enabled()))
+                .addRow("Particle Preset", preset.particlePreset().name().toLowerCase(Locale.ROOT))
+                .addRow("Fall Distance", Integer.toString(preset.fallDistance()))
+                .addRow("Emission Interval Ticks", Integer.toString(preset.emissionIntervalTicks()))
+                .addRow("Particles Per Emission", Integer.toString(preset.particlesPerEmission()))
                 .addSection("Travel Sound")
-                .addRow("Enabled", Boolean.toString(config.travelSound.enabled))
-                .addRow("Id", config.travelSound.id)
-                .addRow("Volume", Float.toString(config.travelSound.volume))
-                .addRow("Pitch Min", Float.toString(config.travelSound.pitchMin))
-                .addRow("Pitch Max", Float.toString(config.travelSound.pitchMax))
-                .addRow("Interval Ticks", Integer.toString(config.travelSound.intervalTicks))
+                .addRow("Enabled", Boolean.toString(preset.travelSound().enabled()))
+                .addRow("Id", preset.travelSound().id())
+                .addRow("Volume", Float.toString(preset.travelSound().volume()))
+                .addRow("Pitch Min", Float.toString(preset.travelSound().pitchMin()))
+                .addRow("Pitch Max", Float.toString(preset.travelSound().pitchMax()))
+                .addRow("Interval Ticks", Integer.toString(preset.travelSound().intervalTicks()))
                 .addSection("Impact")
-                .addRow("Burst Enabled", Boolean.toString(config.impact.burstEnabled))
-                .addRow("Particle Preset", config.impact.particlePreset)
-                .addRow("Particle Count", Integer.toString(config.impact.particleCount))
-                .addRow("Spread", Double.toString(config.impact.spread))
-                .addRow("Sound Enabled", Boolean.toString(config.impact.soundEnabled))
-                .addRow("Sound Id", config.impact.soundId)
-                .addRow("Sound Volume", Float.toString(config.impact.soundVolume))
-                .addRow("Sound Pitch Min", Float.toString(config.impact.soundPitchMin))
-                .addRow("Sound Pitch Max", Float.toString(config.impact.soundPitchMax))
+                .addRow("Burst Enabled", Boolean.toString(preset.impact().burstEnabled()))
+                .addRow("Particle Preset", preset.impact().particlePreset().name().toLowerCase(Locale.ROOT))
+                .addRow("Particle Count", Integer.toString(preset.impact().particleCount()))
+                .addRow("Spread", Double.toString(preset.impact().spread()))
+                .addRow("Sound Enabled", Boolean.toString(preset.impact().soundEnabled()))
+                .addRow("Sound Id", preset.impact().soundId())
+                .addRow("Sound Volume", Float.toString(preset.impact().soundVolume()))
+                .addRow("Sound Pitch Min", Float.toString(preset.impact().soundPitchMin()))
+                .addRow("Sound Pitch Max", Float.toString(preset.impact().soundPitchMax()))
                 .build();
     }
 
-    public static Component buildRewardPresetInfo(NamedPreset<RewardsPresetConfig> preset) {
-        RewardsPresetConfig config = preset.config();
-        ChatTableBuilder builder = new ChatTableBuilder("Reward Preset: " + preset.name())
-                .addSection("Summary")
-                .addRow("Entries", Integer.toString(config.entries.length));
+    public static Component buildRewardPresetInfo(RewardPreset preset) {
+        List<RewardPreset.RewardEntry> entries = preset.entries() == null ? List.of() : preset.entries();
 
-        for (int i = 0; i < config.entries.length; i++) {
-            RewardsPresetConfig.RewardEntry entry = config.entries[i];
+        ChatTableBuilder builder = new ChatTableBuilder("Reward Preset: " + preset.rewardId())
+                .addSection("Summary")
+                .addRow("Entries", Integer.toString(entries.size()));
+
+        for (int i = 0; i < entries.size(); i++) {
+            RewardPreset.RewardEntry entry = entries.get(i);
             builder.addSection("Entry " + (i + 1))
-                    .addRow("Id", entry.id)
-                    .addRow("Weight", Integer.toString(entry.weight))
-                    .addRow("Min Count", Integer.toString(entry.minCount))
-                    .addRow("Max Count", Integer.toString(entry.maxCount))
-                    .addRow("Custom Model Data", entry.customModelData == null ? "None" : entry.customModelData.toString())
-                    .addRow("Custom Data", entry.customData == null || entry.customData.isBlank() ? "None" : entry.customData);
+                    .addRow("Id", entry.itemId())
+                    .addRow("Weight", Integer.toString(entry.weight()))
+                    .addRow("Min Count", Integer.toString(entry.minCount()))
+                    .addRow("Max Count", Integer.toString(entry.maxCount()))
+                    .addRow("Custom Model Data", entry.customModelData() == null ? "None" : entry.customModelData().toString())
+                    .addRow("Custom Data", entry.customData() == null || entry.customData().isBlank() ? "None" : entry.customData());
         }
 
         return builder.build();
@@ -614,9 +698,9 @@ public final class PresetsCommand {
         int weight = IntegerArgumentType.getInteger(context, "weight");
         int min = IntegerArgumentType.getInteger(context, "min");
         int max = IntegerArgumentType.getInteger(context, "max");
-        ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
 
-        if (!manager.hasConfig(presetName)) {
+        RewardPreset preset = FSConfig.getRewardPreset(presetName);
+        if (preset == null) {
             context.getSource().sendFailure(Component.literal("Reward preset not found: " + presetName).withStyle(ChatFormatting.RED));
             return 0;
         }
@@ -635,23 +719,22 @@ public final class PresetsCommand {
             return 0;
         }
 
-        RewardsPresetConfig.RewardEntry entry = buildRewardEntryFromHeldItem(stack, weight, min, max);
-        RewardsPresetConfig config = manager.getConfig(presetName);
-        config.entries = config.entries == null ? new RewardsPresetConfig.RewardEntry[] { entry } : Arrays.copyOf(config.entries, config.entries.length + 1);
-        config.entries[config.entries.length - 1] = entry;
-        updateConfigAndSave(manager, presetName, config);
+        RewardPreset.RewardEntry entry = buildRewardEntryFromHeldItem(stack, weight, min, max);
+        List<RewardPreset.RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
+        updatedEntries.add(entry);
+        FSConfig.setRewardPreset(new RewardPreset(preset.rewardId(), List.copyOf(updatedEntries)));
 
         context.getSource().sendSystemMessage(
                 new ChatTableBuilder("Reward Entry Added From Held Item")
                         .addSection("Preset")
                         .addRow("Name", presetName)
                         .addSection("Entry")
-                        .addRow("Item Id", entry.id)
-                        .addRow("Weight", Integer.toString(entry.weight))
-                        .addRow("Min Count", Integer.toString(entry.minCount))
-                        .addRow("Max Count", Integer.toString(entry.maxCount))
-                        .addRow("Custom Model Data", entry.customModelData == null ? "None" : entry.customModelData.toString())
-                        .addRow("Custom Data", entry.customData == null || entry.customData.isBlank() ? "None" : entry.customData)
+                        .addRow("Item Id", entry.itemId())
+                        .addRow("Weight", Integer.toString(entry.weight()))
+                        .addRow("Min Count", Integer.toString(entry.minCount()))
+                        .addRow("Max Count", Integer.toString(entry.maxCount()))
+                        .addRow("Custom Model Data", entry.customModelData() == null ? "None" : entry.customModelData().toString())
+                        .addRow("Custom Data", entry.customData() == null || entry.customData().isBlank() ? "None" : entry.customData())
                         .build()
         );
         return 1;
@@ -660,41 +743,31 @@ public final class PresetsCommand {
     public static int presetRewardsRemove(CommandContext<CommandSourceStack> context) {
         String presetName = StringArgumentType.getString(context, "name");
         String itemId = StringArgumentType.getString(context, "item_id");
-        ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
 
-        if (!manager.hasConfig(presetName)) {
+        RewardPreset preset = FSConfig.getRewardPreset(presetName);
+        if (preset == null) {
             context.getSource().sendFailure(Component.literal("Reward preset not found: " + presetName).withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        RewardsPresetConfig config = manager.getConfig(presetName);
-        if (config.entries == null || config.entries.length == 0) {
+        List<RewardPreset.RewardEntry> entries = preset.entries() == null ? List.of() : preset.entries();
+        if (entries.isEmpty()) {
             context.getSource().sendFailure(Component.literal("Reward preset '" + presetName + "' has no entries to remove.").withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        int removedCount = 0;
-        RewardsPresetConfig.RewardEntry[] filtered = new RewardsPresetConfig.RewardEntry[config.entries.length];
-        int keptCount = 0;
-        for (RewardsPresetConfig.RewardEntry entry : config.entries) {
-            boolean matches = entry != null && itemId.equals(entry.id);
-            if (matches) {
-                removedCount++;
-                continue;
-            }
-
-            filtered[keptCount++] = entry;
-        }
-
-        filtered = Arrays.copyOf(filtered, keptCount);
+        int before = entries.size();
+        List<RewardPreset.RewardEntry> filtered = entries.stream()
+                .filter(entry -> entry == null || !itemId.equals(entry.itemId()))
+                .toList();
+        int removedCount = before - filtered.size();
 
         if (removedCount == 0) {
             context.getSource().sendFailure(Component.literal("No reward entry with item id '" + itemId + "' was found in preset '" + presetName + "'.").withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        config.entries = filtered;
-        updateConfigAndSave(manager, presetName, config);
+        FSConfig.setRewardPreset(new RewardPreset(preset.rewardId(), filtered));
 
         context.getSource().sendSystemMessage(
                 new ChatTableBuilder("Reward Entry Removed")
@@ -703,13 +776,13 @@ public final class PresetsCommand {
                         .addSection("Removal")
                         .addRow("Item Id", itemId)
                         .addRow("Entries Removed", Integer.toString(removedCount))
-                        .addRow("Remaining Entries", Integer.toString(config.entries.length))
+                        .addRow("Remaining Entries", Integer.toString(filtered.size()))
                         .build()
         );
         return 1;
     }
 
-    public static RewardsPresetConfig.RewardEntry buildRewardEntryFromHeldItem(ItemStack stack, int weight, int min, int max) {
+    public static RewardPreset.RewardEntry buildRewardEntryFromHeldItem(ItemStack stack, int weight, int min, int max) {
         String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
         Integer customModelData = null;
         if (stack.has(DataComponents.CUSTOM_MODEL_DATA)) {
@@ -728,7 +801,7 @@ public final class PresetsCommand {
             }
         }
 
-        return new RewardsPresetConfig.RewardEntry(itemId, weight, min, max, customModelData, customData);
+        return new RewardPreset.RewardEntry(itemId, weight, min, max, customModelData, customData);
     }
 
     public static int presetRewardsAdd(CommandContext<CommandSourceStack> context) {
@@ -753,18 +826,16 @@ public final class PresetsCommand {
         int min = IntegerArgumentType.getInteger(context, "min");
         int max = IntegerArgumentType.getInteger(context, "max");
 
-        ConfigFolderManager<RewardsPresetConfig> manager = FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager();
-        if (!manager.hasConfig(presetName)) {
+        RewardPreset preset = FSConfig.getRewardPreset(presetName);
+        if (preset == null) {
             context.getSource().sendFailure(Component.literal("Reward preset not found: " + presetName).withStyle(ChatFormatting.RED));
             return 0;
         }
 
-        RewardsPresetConfig config = manager.getConfig(presetName);
-        RewardsPresetConfig.RewardEntry entry = new RewardsPresetConfig.RewardEntry(itemId, weight, min, max, customModelData, customData);
-
-        config.entries = config.entries == null ? new RewardsPresetConfig.RewardEntry[] { entry } : Arrays.copyOf(config.entries, config.entries.length + 1);
-        config.entries[config.entries.length - 1] = entry;
-        updateConfigAndSave(manager, presetName, config);
+        RewardPreset.RewardEntry entry = new RewardPreset.RewardEntry(itemId, weight, min, max, customModelData, customData);
+        List<RewardPreset.RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
+        updatedEntries.add(entry);
+        FSConfig.setRewardPreset(new RewardPreset(preset.rewardId(), List.copyOf(updatedEntries)));
 
         context.getSource().sendSystemMessage(
                 new ChatTableBuilder("Reward Entry Added")
@@ -795,31 +866,31 @@ public final class PresetsCommand {
     }
 
     public static int presetEventsDelete(CommandContext<CommandSourceStack> context) {
-        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getEventsConfigManager(), PresetTypes.EVENT, "event");
+        return presetDelete(context, PresetTypes.EVENT, "event", FSConfig::hasEventPreset);
     }
 
     public static int presetRewardsDelete(CommandContext<CommandSourceStack> context) {
-        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getRewardsConfigManager(), PresetTypes.REWARDS, "rewards");
+        return presetDelete(context, PresetTypes.REWARDS, "rewards", FSConfig::hasRewardPreset);
     }
 
     public static int presetVisualsDelete(CommandContext<CommandSourceStack> context) {
-        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getVisualsConfigManager(), PresetTypes.VISUALS, "visuals");
+        return presetDelete(context, PresetTypes.VISUALS, "visuals", FSConfig::hasVisualsPreset);
     }
 
     public static int presetSchedulesDelete(CommandContext<CommandSourceStack> context) {
-        return presetDelete(context, FallingStarRewards.CONFIG_MANAGER.getSchedulesConfigManager(), PresetTypes.SCHEDULE, "schedule");
+        return presetDelete(context, PresetTypes.SCHEDULE, "schedule", FSConfig::hasSchedulePreset);
     }
 
-    public static <T> int presetDelete(
+    public static int presetDelete(
             CommandContext<CommandSourceStack> context,
-            ConfigFolderManager<T> manager,
             PresetTypes presetType,
-            String presetTypeLabel
+            String presetTypeLabel,
+            Predicate<String> existsPredicate
     ) {
         FallingStarCommand.pruneExpiredDeletionRequests();
         String name = StringArgumentType.getString(context, "name");
-        if (!manager.getConfigs().containsKey(name)) {
-            String capitalizedType = presetTypeLabel.substring(0, 1).toUpperCase() + presetTypeLabel.substring(1);
+        if (!existsPredicate.test(name)) {
+            String capitalizedType = presetTypeLabel.substring(0, 1).toUpperCase(Locale.ROOT) + presetTypeLabel.substring(1);
             context.getSource().sendFailure(Component.literal(capitalizedType + " preset not found: " + name).withStyle(ChatFormatting.RED));
             return 0;
         }

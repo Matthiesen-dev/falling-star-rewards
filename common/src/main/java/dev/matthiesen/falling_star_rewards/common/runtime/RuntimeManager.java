@@ -1,7 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
-import dev.matthiesen.falling_star_rewards.common.config.presets.SchedulePresetConfig;
+import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
 import net.minecraft.server.MinecraftServer;
 
@@ -26,37 +26,36 @@ public final class RuntimeManager {
     }
 
     public static void tick(MinecraftServer server) {
-        var enabledSchedules = FallingStarRewards.CONFIG_MANAGER.resolveEnabledSchedules();
+        var enabledSchedules = FSConfig.resolveEnabledSchedules();
         if (enabledSchedules.isEmpty()) {
             return;
         }
 
         int gameTick = server.getTickCount();
-        LoadedPreset visualsSourcePreset = FallingStarRewards.CONFIG_MANAGER.loadRandomEventPreset();
+        LoadedPreset visualsSourcePreset = FSConfig.loadRandomEventPreset();
         if (visualsSourcePreset != null) {
             starEventService.onServerTick(server, visualsSourcePreset);
         }
 
         for (var schedulePreset : enabledSchedules) {
-            String scheduleId = schedulePreset.name();
-            SchedulePresetConfig scheduleConfig = schedulePreset.config();
+            String scheduleId = schedulePreset.scheduleId();
 
             if (!orchestrator.shouldStartCycle(
                     scheduleId,
                     gameTick,
-                    scheduleConfig.baseIntervalTicks,
-                    scheduleConfig.intervalJitterTicks
+                    schedulePreset.baseIntervalTicks(),
+                    schedulePreset.intervalJitterTicks()
             )) {
                 continue;
             }
 
-            LoadedPreset preset = FallingStarRewards.CONFIG_MANAGER.loadPresetForSchedule(scheduleId, scheduleConfig);
+            LoadedPreset preset = FSConfig.loadPresetForSchedule(schedulePreset);
             if (preset == null) {
                 FallingStarRewards.INSTANCE.createWarnLog("No valid event presets found for schedule: " + scheduleId);
                 continue;
             }
 
-            int spawned = starEventService.runCycle(server, preset, false, scheduleConfig);
+            int spawned = starEventService.runCycle(server, preset, false, schedulePreset);
             if (spawned > 0) {
                 FallingStarRewards.INSTANCE.createInfoLog(
                         "Starting star cycle at tick " + gameTick + " for schedule '" + scheduleId + "' (spawned=" + spawned + ")"
