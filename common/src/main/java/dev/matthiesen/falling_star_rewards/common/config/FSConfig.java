@@ -23,16 +23,16 @@ public final class FSConfig {
     public static final PermissionsStartupConfig PERMISSIONS_START_CONFIG;
     public static final ModConfigSpec PERMISSIONS_START_SPEC;
 
-    public static final EventsServerConfig EVENTS_CONFIG;
+    public static final FSPresets.EventsConfig EVENTS_CONFIG;
     public static final ModConfigSpec EVENTS_CONFIG_SPEC;
 
-    public static final RewardsServerConfig REWARDS_CONFIG;
+    public static final FSPresets.RewardsConfig REWARDS_CONFIG;
     public static final ModConfigSpec REWARDS_CONFIG_SPEC;
 
-    public static final ScheduleServerConfig SCHEDULE_CONFIG;
+    public static final FSPresets.SchedulesConfig SCHEDULE_CONFIG;
     public static final ModConfigSpec SCHEDULE_CONFIG_SPEC;
 
-    public static final VisualsServerConfig VISUALS_CONFIG;
+    public static final FSPresets.VisualsConfig VISUALS_CONFIG;
     public static final ModConfigSpec VISUALS_CONFIG_SPEC;
 
     static {
@@ -44,19 +44,19 @@ public final class FSConfig {
         PERMISSIONS_START_CONFIG = permissionsSpecPair.getLeft();
         PERMISSIONS_START_SPEC = permissionsSpecPair.getRight();
 
-        Pair<EventsServerConfig, ModConfigSpec> eventsSpecPair = new ModConfigSpec.Builder().configure(EventsServerConfig::new);
+        Pair<FSPresets.EventsConfig, ModConfigSpec> eventsSpecPair = new ModConfigSpec.Builder().configure(FSPresets.EventsConfig::new);
         EVENTS_CONFIG = eventsSpecPair.getLeft();
         EVENTS_CONFIG_SPEC = eventsSpecPair.getRight();
 
-        Pair<RewardsServerConfig, ModConfigSpec> rewardsSpecPair = new ModConfigSpec.Builder().configure(RewardsServerConfig::new);
+        Pair<FSPresets.RewardsConfig, ModConfigSpec> rewardsSpecPair = new ModConfigSpec.Builder().configure(FSPresets.RewardsConfig::new);
         REWARDS_CONFIG = rewardsSpecPair.getLeft();
         REWARDS_CONFIG_SPEC = rewardsSpecPair.getRight();
 
-        Pair<ScheduleServerConfig, ModConfigSpec> scheduleSpecPair = new ModConfigSpec.Builder().configure(ScheduleServerConfig::new);
+        Pair<FSPresets.SchedulesConfig, ModConfigSpec> scheduleSpecPair = new ModConfigSpec.Builder().configure(FSPresets.SchedulesConfig::new);
         SCHEDULE_CONFIG = scheduleSpecPair.getLeft();
         SCHEDULE_CONFIG_SPEC = scheduleSpecPair.getRight();
 
-        Pair<VisualsServerConfig, ModConfigSpec> visualsSpecPair = new ModConfigSpec.Builder().configure(VisualsServerConfig::new);
+        Pair<FSPresets.VisualsConfig, ModConfigSpec> visualsSpecPair = new ModConfigSpec.Builder().configure(FSPresets.VisualsConfig::new);
         VISUALS_CONFIG = visualsSpecPair.getLeft();
         VISUALS_CONFIG_SPEC = visualsSpecPair.getRight();
     }
