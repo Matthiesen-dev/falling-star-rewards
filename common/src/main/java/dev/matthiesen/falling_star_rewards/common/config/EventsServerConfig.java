@@ -11,7 +11,7 @@ public final class EventsServerConfig {
     public ModConfigSpec.ConfigValue<List<? extends Config>> eventPresets;
 
     public EventsServerConfig(ModConfigSpec.Builder builder) {
-        builder.comment("Falling Star Rewards - Events Configuration").push("events");
+        builder.push("events");
 
         eventPresets = builder
                 .comment(
@@ -21,7 +21,7 @@ public final class EventsServerConfig {
                         List.of("eventPresets"),
                         EventPreset::getDefaultConfig,
                         null,
-                        o -> o instanceof Config && EventPreset.isValid(o)
+                        o -> o instanceof Config
                 );
 
         builder.pop();

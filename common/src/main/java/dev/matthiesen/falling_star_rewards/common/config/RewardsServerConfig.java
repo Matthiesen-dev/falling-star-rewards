@@ -11,7 +11,7 @@ public final class RewardsServerConfig {
     public ModConfigSpec.ConfigValue<List<? extends Config>> rewardPresets;
 
     public RewardsServerConfig(ModConfigSpec.Builder builder) {
-        builder.comment("Falling Star Rewards - Rewards Configuration").push("rewards");
+        builder.push("rewards");
 
         rewardPresets = builder
                 .comment(
@@ -21,7 +21,7 @@ public final class RewardsServerConfig {
                         List.of("rewardPresets"),
                         RewardPreset::getDefaultConfig,
                         null,
-                        o -> o instanceof Config && RewardPreset.isValid(o)
+                        o -> o instanceof Config
                 );
 
         builder.pop();

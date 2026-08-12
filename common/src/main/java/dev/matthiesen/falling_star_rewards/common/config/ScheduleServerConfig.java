@@ -11,7 +11,7 @@ public final class ScheduleServerConfig {
     public ModConfigSpec.ConfigValue<List<? extends Config>> schedulePresets;
 
     public ScheduleServerConfig(ModConfigSpec.Builder builder) {
-        builder.comment("Falling Star Rewards - Schedules Configuration").push("schedules");
+        builder.push("schedules");
 
         schedulePresets = builder
                 .comment(
@@ -21,7 +21,7 @@ public final class ScheduleServerConfig {
                         List.of("schedulePresets"),
                         SchedulePreset::getDefaultConfig,
                         null,
-                        o -> o instanceof Config && SchedulePreset.isValid(o)
+                        o -> o instanceof Config
                 );
 
         builder.pop();

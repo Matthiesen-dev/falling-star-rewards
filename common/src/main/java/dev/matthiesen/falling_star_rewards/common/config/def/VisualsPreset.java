@@ -125,25 +125,29 @@ public record VisualsPreset(
 
         public static boolean isValid(Config config) {
             String id = config.get("id");
-            float volume = config.get("volume");
-            float pitchMin = config.get("pitchMin");
-            float pitchMax = config.get("pitchMax");
+            double volume = config.get("volume");
+            double pitchMin = config.get("pitchMin");
+            double pitchMax = config.get("pitchMax");
             int intervalTicks = config.get("intervalTicks");
 
             return id != null && !id.isEmpty()
-                    && volume >= 0.0f
-                    && pitchMin >= 0.0f
-                    && pitchMax >= 0.0f
+                    && volume >= 0.0
+                    && pitchMin >= 0.0
+                    && pitchMax >= 0.0
                     && intervalTicks >= 0;
         }
 
         public static TravelSound deserialize(Config config) {
             boolean enabled = config.get("enabled");
             String id = config.get("id");
-            float volume = config.get("volume");
-            float pitchMin = config.get("pitchMin");
-            float pitchMax = config.get("pitchMax");
+            double rawVolume = config.get("volume");
+            double rawPitchMin = config.get("pitchMin");
+            double rawPitchMax = config.get("pitchMax");
             int intervalTicks = config.get("intervalTicks");
+
+            float volume = (float) rawVolume;
+            float pitchMin = (float) rawPitchMin;
+            float pitchMax = (float) rawPitchMax;
 
             return new TravelSound(enabled, id, volume, pitchMin, pitchMax, intervalTicks);
         }
@@ -175,9 +179,14 @@ public record VisualsPreset(
         public static boolean isValid(Config config) {
             ParticlePreset particlePreset = config.getEnum("particlePreset", ParticlePreset.class);
             String soundId = config.get("soundId");
-            float soundVolume = config.get("soundVolume");
-            float soundPitchMin = config.get("soundPitchMin");
-            float soundPitchMax = config.get("soundPitchMax");
+
+            double rawSoundVolume = config.get("soundVolume");
+            double rawSoundPitchMin = config.get("soundPitchMin");
+            double rawSoundPitchMax = config.get("soundPitchMax");
+
+            float soundVolume = (float) rawSoundVolume;
+            float soundPitchMin = (float) rawSoundPitchMin;
+            float soundPitchMax = (float) rawSoundPitchMax;
 
             return particlePreset != null
                     && soundId != null && !soundId.isEmpty()
@@ -193,9 +202,12 @@ public record VisualsPreset(
             double spread = config.get("spread");
             boolean soundEnabled = config.get("soundEnabled");
             String soundId = config.get("soundId");
-            float soundVolume = config.get("soundVolume");
-            float soundPitchMin = config.get("soundPitchMin");
-            float soundPitchMax = config.get("soundPitchMax");
+            double rawSoundVolume = config.get("soundVolume");
+            double rawSoundPitchMin = config.get("soundPitchMin");
+            double rawSoundPitchMax = config.get("soundPitchMax");
+            float soundVolume = (float) rawSoundVolume;
+            float soundPitchMin = (float) rawSoundPitchMin;
+            float soundPitchMax = (float) rawSoundPitchMax;
             return new Impact(burstEnabled, particlePreset, particleCount, spread, soundEnabled, soundId, soundVolume, soundPitchMin, soundPitchMax);
         }
 

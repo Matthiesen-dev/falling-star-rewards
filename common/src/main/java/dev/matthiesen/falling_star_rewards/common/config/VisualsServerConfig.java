@@ -11,7 +11,7 @@ public final class VisualsServerConfig {
     public ModConfigSpec.ConfigValue<List<? extends Config>> visualsPresets;
 
     public VisualsServerConfig(ModConfigSpec.Builder builder) {
-        builder.comment("Falling Star Rewards - Visuals Configuration").push("visuals");
+        builder.push("visuals");
 
         visualsPresets = builder
                 .comment("List of Visuals Presets. Each preset defines the visuals for a falling star event.")
@@ -19,7 +19,7 @@ public final class VisualsServerConfig {
                         List.of("visualsPresets"),
                         VisualsPreset::getDefaultConfig,
                         null,
-                        o -> o instanceof Config && VisualsPreset.isValid(o)
+                        o -> o instanceof Config
                 );
 
         builder.pop();
