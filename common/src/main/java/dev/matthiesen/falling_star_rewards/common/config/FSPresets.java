@@ -1,10 +1,7 @@
 package dev.matthiesen.falling_star_rewards.common.config;
 
 import com.electronwill.nightconfig.core.Config;
-import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.*;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;

@@ -1,6 +1,10 @@
 package dev.matthiesen.falling_star_rewards.common.config.def;
 
 import com.electronwill.nightconfig.core.Config;
+import dev.matthiesen.falling_star_rewards.common.config.def.event.Announcement;
+import dev.matthiesen.falling_star_rewards.common.config.def.event.Spawn;
+import dev.matthiesen.falling_star_rewards.common.interfaces.AnnouncementScope;
+import dev.matthiesen.falling_star_rewards.common.interfaces.SpawnTargetScope;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,30 +116,5 @@ public record EventPreset(
         config.set("spawn", spawnConfig);
         config.set("announcement", announcementConfig);
         return config;
-    }
-
-    public record Spawn(
-            SpawnTargetScope targetScope,
-            int minRadius,
-            int maxRadius,
-            int maxLocationAttempts,
-            boolean allowWaterSpawns
-    ) {}
-
-    public record Announcement(
-            boolean enabled,
-            AnnouncementScope scope,
-            boolean useActionBar,
-            List<String> messages
-    ) {}
-
-    public enum SpawnTargetScope {
-        GLOBAL,
-        PER_PLAYER
-    }
-
-    public enum AnnouncementScope {
-        GLOBAL,
-        NEARBY
     }
 }

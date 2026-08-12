@@ -1,6 +1,11 @@
 package dev.matthiesen.falling_star_rewards.common.config.def;
 
 import com.electronwill.nightconfig.core.Config;
+import dev.matthiesen.falling_star_rewards.common.config.def.schedule.Conditions;
+import dev.matthiesen.falling_star_rewards.common.config.def.schedule.EventEntry;
+import dev.matthiesen.falling_star_rewards.common.interfaces.SelectionMode;
+import dev.matthiesen.falling_star_rewards.common.interfaces.TimeMode;
+import dev.matthiesen.falling_star_rewards.common.interfaces.WeatherMode;
 
 import java.util.List;
 
@@ -17,12 +22,6 @@ public record SchedulePreset(
         State state
 ) {
 
-    public enum SelectionMode {
-        RANDOM,
-        WEIGHTED,
-        ROTATION
-    }
-
     public static List<Config> getDefaultConfig() {
         List<SchedulePreset> presets = List.of(
                 new SchedulePreset(
@@ -35,7 +34,7 @@ public record SchedulePreset(
                         List.of(
                                 new EventEntry("base", true, 1)
                         ),
-                        new Conditions(Conditions.TimeMode.ANY, true, Conditions.WeatherMode.ANY, List.of()),
+                        new Conditions(TimeMode.ANY, true, WeatherMode.ANY, List.of()),
                         new State()
                 )
         );
@@ -110,86 +109,6 @@ public record SchedulePreset(
         config.set("conditions", conditions.serialize());
         config.set("state", state.serialize());
         return config;
-    }
-
-    public record EventEntry(
-            String eventId,
-            boolean enabled,
-            int weight
-    ) {
-
-        public static boolean isValid(Config config) {
-            String eventId = config.get("eventId");
-            boolean enabled = config.get("enabled");
-            int weight = config.getInt("weight");
-
-            return eventId != null && !eventId.isEmpty() && weight > 0;
-        }
-
-        public static EventEntry deserialize(Config config) {
-            String eventId = config.get("eventId");
-            boolean enabled = config.get("enabled");
-            int weight = config.getInt("weight");
-            return new EventEntry(eventId, enabled, weight);
-        }
-
-        public Config serialize() {
-            Config config = Config.inMemory();
-            config.set("eventId", eventId);
-            config.set("enabled", enabled);
-            config.set("weight", weight);
-            return config;
-        }
-    }
-
-    public record Conditions(
-            TimeMode timeMode,
-            boolean requireSurfaceAccess,
-            WeatherMode weatherMode,
-            List<String> moonPhases
-    ) {
-
-        public enum TimeMode {
-            ANY,
-            DAY,
-            NIGHT
-        }
-
-        public enum WeatherMode {
-            ANY,
-            CLEAR,
-            RAIN,
-            THUNDER
-        }
-
-        public static boolean isValid(Config config) {
-            TimeMode timeMode = config.getEnum("timeMode", TimeMode.class);
-            boolean requireSurfaceAccess = config.get("requireSurfaceAccess");
-            WeatherMode weatherMode = config.getEnum("weatherMode", WeatherMode.class);
-            List<String> moonPhases = config.get("moonPhases");
-
-            return timeMode != null
-                    && weatherMode != null
-                    && moonPhases != null;
-        }
-
-        public static Conditions deserialize(Config config) {
-            TimeMode timeMode = config.getEnum("timeMode", TimeMode.class);
-            boolean requireSurfaceAccess = config.get("requireSurfaceAccess");
-            WeatherMode weatherMode = config.getEnum("weatherMode", WeatherMode.class);
-            List<String> moonPhases = config.get("moonPhases");
-
-            return new Conditions(timeMode, requireSurfaceAccess, weatherMode, moonPhases);
-        }
-
-        public Config serialize() {
-            Config config = Config.inMemory();
-            config.set("timeMode", timeMode);
-            config.set("requireSurfaceAccess", requireSurfaceAccess);
-            config.set("weatherMode", weatherMode);
-            config.set("moonPhases", moonPhases);
-            return config;
-        }
     }
 
     public static class State {

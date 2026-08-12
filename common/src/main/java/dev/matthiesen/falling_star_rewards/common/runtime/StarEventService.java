@@ -3,13 +3,10 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
 import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
 import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
-import dev.matthiesen.falling_star_rewards.common.interfaces.ActiveStarDrop;
-import dev.matthiesen.falling_star_rewards.common.interfaces.EventCommandContext;
-import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
-import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
+import dev.matthiesen.falling_star_rewards.common.config.def.schedule.Conditions;
+import dev.matthiesen.falling_star_rewards.common.interfaces.*;
 import dev.matthiesen.matthiesen_core.common.utility.commands.RunSlashCommand;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -171,7 +168,7 @@ public final class StarEventService {
             return true;
         }
 
-        SchedulePreset.Conditions conditions = scheduleConfig.conditions();
+        Conditions conditions = scheduleConfig.conditions();
 
         if (!isTimeEligible(level, conditions.timeMode())) {
             return false;
@@ -291,7 +288,7 @@ public final class StarEventService {
         return spawnPos;
     }
 
-    private boolean isWeatherEligible(ServerLevel level, SchedulePreset.Conditions.WeatherMode weatherMode) {
+    private boolean isWeatherEligible(ServerLevel level, WeatherMode weatherMode) {
         return switch (weatherMode) {
             case CLEAR -> !level.isRaining();
             case RAIN -> level.isRaining() && !level.isThundering();
@@ -300,7 +297,7 @@ public final class StarEventService {
         };
     }
 
-    private boolean isTimeEligible(ServerLevel level, SchedulePreset.Conditions.TimeMode timeMode) {
+    private boolean isTimeEligible(ServerLevel level, TimeMode timeMode) {
         return switch (timeMode) {
             case DAY -> level.isDay();
             case NIGHT -> level.isNight();
@@ -353,7 +350,7 @@ public final class StarEventService {
     }
 
     private boolean isGlobalScope(LoadedPreset config) {
-        return config.eventConfig.spawn().targetScope() == EventPreset.SpawnTargetScope.GLOBAL;
+        return config.eventConfig.spawn().targetScope() == SpawnTargetScope.GLOBAL;
     }
 
     private String pickString(List<String> stringList) {
@@ -378,7 +375,7 @@ public final class StarEventService {
 
         String rawMessage = pickString(config.eventConfig.announcement().messages());
         Component message = Component.literal(rawMessage).withStyle(ChatFormatting.AQUA);
-        if (config.eventConfig.announcement().scope() == EventPreset.AnnouncementScope.GLOBAL) {
+        if (config.eventConfig.announcement().scope() == AnnouncementScope.GLOBAL) {
             server.getPlayerList().broadcastSystemMessage(message, useActionBarOverlay);
             return;
         }
@@ -549,7 +546,7 @@ public final class StarEventService {
         return BuiltInRegistries.SOUND_EVENT.getOptional(resourceLocation).orElse(null);
     }
 
-    private ParticleOptions resolveParticlePreset(VisualsPreset.ParticlePreset preset) {
+    private ParticleOptions resolveParticlePreset(ParticlePreset preset) {
         if (preset == null) {
             return ParticleTypes.END_ROD;
         }

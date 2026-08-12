@@ -2,11 +2,10 @@ package dev.matthiesen.falling_star_rewards.common.config;
 
 import com.electronwill.nightconfig.core.Config;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
-import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.*;
+import dev.matthiesen.falling_star_rewards.common.config.def.schedule.EventEntry;
 import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
+import dev.matthiesen.falling_star_rewards.common.interfaces.SelectionMode;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
@@ -454,7 +453,7 @@ public final class FSConfig {
     private static String selectEventPresetId(SchedulePreset schedulePreset) {
         List<EventPreset> eventPresets = getEventPresets();
 
-        List<SchedulePreset.EventEntry> eventEntries = schedulePreset.eventEntries() == null
+        List<EventEntry> eventEntries = schedulePreset.eventEntries() == null
                 ? List.of()
                 : schedulePreset.eventEntries().stream()
                 .filter(entry -> entry != null && entry.enabled())
@@ -466,7 +465,7 @@ public final class FSConfig {
             return null;
         }
 
-        SchedulePreset.SelectionMode selectionMode = schedulePreset.selectionMode();
+        SelectionMode selectionMode = schedulePreset.selectionMode();
         return switch (selectionMode) {
             case WEIGHTED -> selectWeighted(eventEntries);
             case ROTATION -> selectRotation(schedulePreset, eventEntries);
@@ -474,20 +473,20 @@ public final class FSConfig {
         };
     }
 
-    private static String selectRandom(List<SchedulePreset.EventEntry> eventEntries) {
+    private static String selectRandom(List<EventEntry> eventEntries) {
         int index = ThreadLocalRandom.current().nextInt(eventEntries.size());
         return eventEntries.get(index).eventId();
     }
 
-    private static String selectWeighted(List<SchedulePreset.EventEntry> eventEntries) {
+    private static String selectWeighted(List<EventEntry> eventEntries) {
         int totalWeight = 0;
-        for (SchedulePreset.EventEntry entry : eventEntries) {
+        for (EventEntry entry : eventEntries) {
             totalWeight += entry.weight();
         }
 
         int roll = ThreadLocalRandom.current().nextInt(totalWeight);
         int cursor = 0;
-        for (SchedulePreset.EventEntry entry : eventEntries) {
+        for (EventEntry entry : eventEntries) {
             cursor += Math.max(1, entry.weight());
             if (roll < cursor) {
                 return entry.eventId();
@@ -496,7 +495,7 @@ public final class FSConfig {
         return eventEntries.getLast().eventId();
     }
 
-    private static String selectRotation(SchedulePreset schedulePreset, List<SchedulePreset.EventEntry> eventEntries) {
+    private static String selectRotation(SchedulePreset schedulePreset, List<EventEntry> eventEntries) {
         int current = Math.max(0, schedulePreset.state().rotationCursor);
         int index = current % eventEntries.size();
         String selected = eventEntries.get(index).eventId();
