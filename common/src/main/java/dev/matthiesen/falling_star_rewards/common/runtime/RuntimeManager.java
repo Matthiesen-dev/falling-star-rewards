@@ -2,7 +2,7 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.LoadedPreset;
 import net.minecraft.server.MinecraftServer;
 
 public final class RuntimeManager {

@@ -6,7 +6,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.PresetDeletionRequest;
 import dev.matthiesen.falling_star_rewards.common.command.subcommands.*;
 import dev.matthiesen.matthiesen_core.common.api.command.CoreCommand;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;

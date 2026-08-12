@@ -5,7 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.PresetDeletionRequest;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
