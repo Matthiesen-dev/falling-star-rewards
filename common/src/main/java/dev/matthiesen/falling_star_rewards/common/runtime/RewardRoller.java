@@ -1,5 +1,6 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
+import dev.matthiesen.falling_star_rewards.common.config.def.reward.RewardEntry;
 import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
 
@@ -16,7 +17,7 @@ public final class RewardRoller {
     }
 
     public Optional<RolledReward> roll(RewardPreset config, RandomGenerator random) {
-        List<RewardPreset.RewardEntry> candidates = new ArrayList<>();
+        List<RewardEntry> candidates = new ArrayList<>();
         int totalWeight = 0;
 
         for (var entry : config.entries()) {

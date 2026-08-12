@@ -9,10 +9,9 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.*;
+import dev.matthiesen.falling_star_rewards.common.config.def.reward.RewardEntry;
+import dev.matthiesen.falling_star_rewards.common.config.def.schedule.Conditions;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetTypes;
 import dev.matthiesen.matthiesen_core.common.utility.chat.ChatTableBuilder;
@@ -622,7 +621,7 @@ public final class PresetsCommand {
     }
 
     public static Component buildSchedulePresetInfo(SchedulePreset preset) {
-        SchedulePreset.Conditions conditions = preset.conditions();
+        Conditions conditions = preset.conditions();
         SchedulePreset.State state = preset.state();
         return new ChatTableBuilder("Schedule Preset: " + preset.scheduleId())
                 .addSection("General")
@@ -673,14 +672,14 @@ public final class PresetsCommand {
     }
 
     public static Component buildRewardPresetInfo(RewardPreset preset) {
-        List<RewardPreset.RewardEntry> entries = preset.entries() == null ? List.of() : preset.entries();
+        List<RewardEntry> entries = preset.entries() == null ? List.of() : preset.entries();
 
         ChatTableBuilder builder = new ChatTableBuilder("Reward Preset: " + preset.rewardId())
                 .addSection("Summary")
                 .addRow("Entries", Integer.toString(entries.size()));
 
         for (int i = 0; i < entries.size(); i++) {
-            RewardPreset.RewardEntry entry = entries.get(i);
+            RewardEntry entry = entries.get(i);
             builder.addSection("Entry " + (i + 1))
                     .addRow("Id", entry.itemId())
                     .addRow("Weight", Integer.toString(entry.weight()))
@@ -719,8 +718,8 @@ public final class PresetsCommand {
             return 0;
         }
 
-        RewardPreset.RewardEntry entry = buildRewardEntryFromHeldItem(stack, weight, min, max);
-        List<RewardPreset.RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
+        RewardEntry entry = buildRewardEntryFromHeldItem(stack, weight, min, max);
+        List<RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
         updatedEntries.add(entry);
         FSConfig.setRewardPreset(new RewardPreset(preset.rewardId(), List.copyOf(updatedEntries)));
 
@@ -750,14 +749,14 @@ public final class PresetsCommand {
             return 0;
         }
 
-        List<RewardPreset.RewardEntry> entries = preset.entries() == null ? List.of() : preset.entries();
+        List<RewardEntry> entries = preset.entries() == null ? List.of() : preset.entries();
         if (entries.isEmpty()) {
             context.getSource().sendFailure(Component.literal("Reward preset '" + presetName + "' has no entries to remove.").withStyle(ChatFormatting.RED));
             return 0;
         }
 
         int before = entries.size();
-        List<RewardPreset.RewardEntry> filtered = entries.stream()
+        List<RewardEntry> filtered = entries.stream()
                 .filter(entry -> entry == null || !itemId.equals(entry.itemId()))
                 .toList();
         int removedCount = before - filtered.size();
@@ -782,7 +781,7 @@ public final class PresetsCommand {
         return 1;
     }
 
-    public static RewardPreset.RewardEntry buildRewardEntryFromHeldItem(ItemStack stack, int weight, int min, int max) {
+    public static RewardEntry buildRewardEntryFromHeldItem(ItemStack stack, int weight, int min, int max) {
         String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
         Integer customModelData = null;
         if (stack.has(DataComponents.CUSTOM_MODEL_DATA)) {
@@ -801,7 +800,7 @@ public final class PresetsCommand {
             }
         }
 
-        return new RewardPreset.RewardEntry(itemId, weight, min, max, customModelData, customData);
+        return new RewardEntry(itemId, weight, min, max, customModelData, customData);
     }
 
     public static int presetRewardsAdd(CommandContext<CommandSourceStack> context) {
@@ -832,8 +831,8 @@ public final class PresetsCommand {
             return 0;
         }
 
-        RewardPreset.RewardEntry entry = new RewardPreset.RewardEntry(itemId, weight, min, max, customModelData, customData);
-        List<RewardPreset.RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
+        RewardEntry entry = new RewardEntry(itemId, weight, min, max, customModelData, customData);
+        List<RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
         updatedEntries.add(entry);
         FSConfig.setRewardPreset(new RewardPreset(preset.rewardId(), List.copyOf(updatedEntries)));
 
