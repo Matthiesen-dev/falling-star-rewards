@@ -18,7 +18,8 @@ public final class FSPresets {
             builder.push("events");
             eventPresets = builder
                     .comment(
-                            "List of event presets. Each preset defines the configuration for a specific event."
+                            "List of event presets. Each preset defines the configuration for a specific event.",
+                            "For full breakdown of configuration options, see: https://mods.matthiesen.dev/falling-star-rewards/config/#events-presets"
                     )
                     .defineList(
                             List.of("eventPresets"),
@@ -37,7 +38,8 @@ public final class FSPresets {
             builder.push("rewards");
             rewardPresets = builder
                     .comment(
-                            "List of reward presets. Each preset defines the configuration for a specific reward."
+                            "List of reward presets. Each preset defines the configuration for a specific reward.",
+                            "For full breakdown of configuration options, see: https://mods.matthiesen.dev/falling-star-rewards/config/#rewards-presets"
                     )
                     .defineList(
                             List.of("rewardPresets"),
@@ -56,7 +58,8 @@ public final class FSPresets {
             builder.push("schedules");
             schedulePresets = builder
                     .comment(
-                            "List of schedule presets. Each preset defines the configuration for a specific schedule."
+                            "List of schedule presets. Each preset defines the configuration for a specific schedule.",
+                            "For full breakdown of configuration options, see: https://mods.matthiesen.dev/falling-star-rewards/config/#scheduling-presets"
                     )
                     .defineList(
                             List.of("schedulePresets"),
@@ -74,7 +77,10 @@ public final class FSPresets {
         public VisualsConfig(ModConfigSpec.Builder builder) {
             builder.push("visuals");
             visualsPresets = builder
-                    .comment("List of Visuals Presets. Each preset defines the visuals for a falling star event.")
+                    .comment(
+                            "List of Visuals Presets. Each preset defines the visuals for a falling star event.",
+                            "For full breakdown of configuration options, see: https://mods.matthiesen.dev/falling-star-rewards/config/#visuals-presets"
+                    )
                     .defineList(
                             List.of("visualsPresets"),
                             VisualsPreset::getDefaultConfig,
