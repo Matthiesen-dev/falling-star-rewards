@@ -12,7 +12,7 @@ import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.config.def.*;
 import dev.matthiesen.falling_star_rewards.common.config.def.reward.RewardEntry;
 import dev.matthiesen.falling_star_rewards.common.config.def.schedule.Conditions;
-import dev.matthiesen.falling_star_rewards.common.interfaces.PresetDeletionRequest;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.PresetDeletionRequest;
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetTypes;
 import dev.matthiesen.matthiesen_core.common.utility.chat.ChatTableBuilder;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;

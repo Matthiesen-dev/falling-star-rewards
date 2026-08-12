@@ -1,4 +1,4 @@
-package dev.matthiesen.falling_star_rewards.common.interfaces;
+package dev.matthiesen.falling_star_rewards.common.interfaces.runtime;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;

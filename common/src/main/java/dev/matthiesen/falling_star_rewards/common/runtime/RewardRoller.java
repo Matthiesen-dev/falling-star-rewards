@@ -2,7 +2,7 @@ package dev.matthiesen.falling_star_rewards.common.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.config.def.reward.RewardEntry;
 import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
-import dev.matthiesen.falling_star_rewards.common.interfaces.RolledReward;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.RolledReward;
 
 import java.util.ArrayList;
 import java.util.List;

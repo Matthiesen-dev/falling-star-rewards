@@ -1,4 +1,4 @@
-package dev.matthiesen.falling_star_rewards.common.interfaces;
+package dev.matthiesen.falling_star_rewards.common.interfaces.runtime;
 
 import dev.matthiesen.falling_star_rewards.common.config.def.EventPreset;
 import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;

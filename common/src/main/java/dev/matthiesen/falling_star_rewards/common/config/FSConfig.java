@@ -4,7 +4,7 @@ import com.electronwill.nightconfig.core.Config;
 import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.def.*;
 import dev.matthiesen.falling_star_rewards.common.config.def.schedule.EventEntry;
-import dev.matthiesen.falling_star_rewards.common.interfaces.LoadedPreset;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.LoadedPreset;
 import dev.matthiesen.falling_star_rewards.common.interfaces.SelectionMode;
 import dev.matthiesen.falling_star_rewards.common.runtime.RewardValidator;
 import net.neoforged.neoforge.common.ModConfigSpec;
