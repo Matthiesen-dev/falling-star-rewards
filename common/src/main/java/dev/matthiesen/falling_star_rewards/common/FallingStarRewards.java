@@ -30,6 +30,10 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return source -> PermissionRegistry.checkPermission(source, permission);
     }
 
+    public static String modConfig(String name) {
+        return MOD_ID + "/" + name + ".toml";
+    }
+
     static {
         INSTANCE = new FallingStarRewards();
     }
@@ -42,12 +46,12 @@ public final class FallingStarRewards extends AbstractCommonMod {
     public void initialize() {
         super.initialize();
 
-        registerModConfig(MOD_ID, ModConfigType.STARTUP, FSConfig.PERMISSIONS_START_SPEC, "falling_star_rewards/permissions.toml");
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, "falling_star_rewards/server.toml");
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.EVENTS_CONFIG_SPEC, "falling_star_rewards/events.toml");
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.REWARDS_CONFIG_SPEC, "falling_star_rewards/rewards.toml");
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SCHEDULE_CONFIG_SPEC, "falling_star_rewards/schedules.toml");
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.VISUALS_CONFIG_SPEC, "falling_star_rewards/visuals.toml");
+        registerModConfig(MOD_ID, ModConfigType.STARTUP, FSConfig.PERMISSIONS_START_SPEC, modConfig("permissions"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, modConfig("server"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.EVENTS_CONFIG_SPEC, modConfig("events"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.REWARDS_CONFIG_SPEC, modConfig("rewards"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SCHEDULE_CONFIG_SPEC, modConfig("schedules"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.VISUALS_CONFIG_SPEC, modConfig("visuals"));
 
         PermissionRegistry.init();
 
