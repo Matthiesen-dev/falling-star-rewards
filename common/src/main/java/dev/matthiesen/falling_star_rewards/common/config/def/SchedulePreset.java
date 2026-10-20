@@ -20,7 +20,7 @@ public record SchedulePreset(
         List<EventEntry> eventEntries,
         Conditions conditions,
         State state,
-        String startCallback
+        List<String> startCallback
 ) {
 
     public static List<Config> getDefaultConfig() {
@@ -37,7 +37,7 @@ public record SchedulePreset(
                         ),
                         new Conditions(TimeMode.ANY, true, WeatherMode.ANY, List.of()),
                         new State(),
-                        ""
+                        List.of()
                 )
         );
 
@@ -59,7 +59,7 @@ public record SchedulePreset(
         List<Config> eventEntriesConfig = config.get("eventEntries");
         Config conditionsConfig = config.get("conditions");
         Config stateConfig = config.get("state");
-        String startCallback = config.get("startCallback");
+        List<? extends String> startCallback = config.get("startCallback");
 
         return scheduleId != null && !scheduleId.isEmpty()
                 && baseIntervalTicks > 0
@@ -86,7 +86,7 @@ public record SchedulePreset(
         Conditions conditions = Conditions.deserialize(conditionsConfig);
         Config stateConfig = config.get("state");
         State state = State.deserialize(stateConfig);
-        String startCallback = config.get("startCallback");
+        List<String> startCallback = config.get("startCallback");
 
         return new SchedulePreset(
                 scheduleId,
