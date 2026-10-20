@@ -245,7 +245,8 @@ public final class FSConfig {
                 base.selectionMode(),
                 base.eventEntries(),
                 base.conditions(),
-                base.state()
+                base.state(),
+                base.startCallback()
         ));
         return true;
     }
