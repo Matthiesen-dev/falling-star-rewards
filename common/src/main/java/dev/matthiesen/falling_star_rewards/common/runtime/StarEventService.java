@@ -565,12 +565,7 @@ public final class StarEventService {
             return ParticleTypes.END_ROD;
         }
 
-        return switch (preset) {
-            case ASH -> ParticleTypes.ASH;
-            case GLOW -> ParticleTypes.GLOW;
-            case FIREWORK -> ParticleTypes.FIREWORK;
-            default -> ParticleTypes.END_ROD;
-        };
+        return preset.getVanillaParticle();
     }
 }
 
