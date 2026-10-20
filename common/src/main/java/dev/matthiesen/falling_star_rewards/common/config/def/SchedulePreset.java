@@ -19,7 +19,8 @@ public record SchedulePreset(
         SelectionMode selectionMode,
         List<EventEntry> eventEntries,
         Conditions conditions,
-        State state
+        State state,
+        String startCallback
 ) {
 
     public static List<Config> getDefaultConfig() {
@@ -35,7 +36,8 @@ public record SchedulePreset(
                                 new EventEntry("base", true, 1)
                         ),
                         new Conditions(TimeMode.ANY, true, WeatherMode.ANY, List.of()),
-                        new State()
+                        new State(),
+                        ""
                 )
         );
 
@@ -57,6 +59,7 @@ public record SchedulePreset(
         List<Config> eventEntriesConfig = config.get("eventEntries");
         Config conditionsConfig = config.get("conditions");
         Config stateConfig = config.get("state");
+        String startCallback = config.get("startCallback");
 
         return scheduleId != null && !scheduleId.isEmpty()
                 && baseIntervalTicks > 0
@@ -83,6 +86,7 @@ public record SchedulePreset(
         Conditions conditions = Conditions.deserialize(conditionsConfig);
         Config stateConfig = config.get("state");
         State state = State.deserialize(stateConfig);
+        String startCallback = config.get("startCallback");
 
         return new SchedulePreset(
                 scheduleId,
@@ -93,7 +97,8 @@ public record SchedulePreset(
                 selectionMode,
                 eventEntries,
                 conditions,
-                state
+                state,
+                startCallback
         );
     }
 
@@ -108,6 +113,7 @@ public record SchedulePreset(
         config.set("eventEntries", eventEntries.stream().map(EventEntry::serialize).toList());
         config.set("conditions", conditions.serialize());
         config.set("state", state.serialize());
+        config.set("startCallback", startCallback);
         return config;
     }
 

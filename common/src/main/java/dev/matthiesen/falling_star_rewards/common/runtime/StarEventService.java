@@ -131,6 +131,10 @@ public final class StarEventService {
 
         Collections.shuffle(eligiblePlayers, ThreadLocalRandom.current());
 
+        if (scheduleConfig != null && !scheduleConfig.startCallback().isEmpty()) {
+            RunSlashCommand.asServer(scheduleConfig.startCallback());
+        }
+
         int spawned = 0;
 
         for (ServerPlayer player : eligiblePlayers) {
