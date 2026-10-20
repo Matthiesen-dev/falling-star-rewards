@@ -2,6 +2,11 @@ package dev.matthiesen.falling_star_rewards.common.interfaces;
 
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public enum ParticlePreset {
     ANGRY_VILLAGER(ParticleTypes.ANGRY_VILLAGER),
@@ -106,5 +111,24 @@ public enum ParticlePreset {
 
     public ParticleOptions getVanillaParticle() {
         return vanillaParticle;
+    }
+
+    public static String getPresetsConfigString() {
+        List<@NotNull String> particlePresets = Arrays.stream(ParticlePreset.values())
+                .map(ParticlePreset::name)
+                .toList();
+        int count = particlePresets.size();
+        List<String> particlePresetLines = new ArrayList<>();
+        int batchSize = 10; // Number of items per line
+        for (int i = 0; i < count; i += batchSize) {
+            int end = Math.min(i + batchSize, count);
+            List<String> batch = particlePresets.subList(i, end);
+            particlePresetLines.add(String.join(", ", batch));
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String line : particlePresetLines) {
+            sb.append("\n ").append(line);
+        }
+        return sb.toString();
     }
 }
