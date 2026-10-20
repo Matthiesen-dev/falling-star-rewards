@@ -357,7 +357,8 @@ public final class PresetsCommand {
                 preset.selectionMode(),
                 preset.eventEntries(),
                 preset.conditions(),
-                preset.state()
+                preset.state(),
+                preset.startCallback()
         ));
         context.getSource().sendSystemMessage(presetEnabledState(presetId, true));
         return 1;
@@ -379,7 +380,8 @@ public final class PresetsCommand {
                 preset.selectionMode(),
                 preset.eventEntries(),
                 preset.conditions(),
-                preset.state()
+                preset.state(),
+                preset.startCallback()
         ));
         context.getSource().sendSystemMessage(presetEnabledState(presetId, false));
         return 1;
