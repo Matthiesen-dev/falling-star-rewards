@@ -16,17 +16,13 @@ import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.PresetDelet
 import dev.matthiesen.falling_star_rewards.common.interfaces.PresetTypes;
 import dev.matthiesen.matthiesen_core.common.utility.chat.ChatTableBuilder;
 import dev.matthiesen.matthiesen_core.common.utility.commands.CommandBuilder;
+import dev.matthiesen.matthiesen_core.common.utility.item.ItemDecoder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.component.CustomModelData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -686,9 +682,7 @@ public final class PresetsCommand {
                     .addRow("Id", entry.itemId())
                     .addRow("Weight", Integer.toString(entry.weight()))
                     .addRow("Min Count", Integer.toString(entry.minCount()))
-                    .addRow("Max Count", Integer.toString(entry.maxCount()))
-                    .addRow("Custom Model Data", entry.customModelData() == null ? "None" : entry.customModelData().toString())
-                    .addRow("Custom Data", entry.customData() == null || entry.customData().isBlank() ? "None" : entry.customData());
+                    .addRow("Max Count", Integer.toString(entry.maxCount()));
         }
 
         return builder.build();
@@ -734,8 +728,6 @@ public final class PresetsCommand {
                         .addRow("Weight", Integer.toString(entry.weight()))
                         .addRow("Min Count", Integer.toString(entry.minCount()))
                         .addRow("Max Count", Integer.toString(entry.maxCount()))
-                        .addRow("Custom Model Data", entry.customModelData() == null ? "None" : entry.customModelData().toString())
-                        .addRow("Custom Data", entry.customData() == null || entry.customData().isBlank() ? "None" : entry.customData())
                         .build()
         );
         return 1;
@@ -784,25 +776,8 @@ public final class PresetsCommand {
     }
 
     public static RewardEntry buildRewardEntryFromHeldItem(ItemStack stack, int weight, int min, int max) {
-        String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-        Integer customModelData = null;
-        if (stack.has(DataComponents.CUSTOM_MODEL_DATA)) {
-            CustomModelData modelData = stack.get(DataComponents.CUSTOM_MODEL_DATA);
-            if (modelData != null) {
-                customModelData = modelData.value();
-            }
-        }
-
-        String customData = null;
-        if (stack.has(DataComponents.CUSTOM_DATA)) {
-            CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-            if (data != null) {
-                CompoundTag tag = data.copyTag();
-                customData = tag.toString();
-            }
-        }
-
-        return new RewardEntry(itemId, weight, min, max, customModelData, customData);
+        String itemId = ItemDecoder.serialize(stack);
+        return new RewardEntry(itemId, weight, min, max);
     }
 
     public static int presetRewardsAdd(CommandContext<CommandSourceStack> context) {
@@ -833,7 +808,7 @@ public final class PresetsCommand {
             return 0;
         }
 
-        RewardEntry entry = new RewardEntry(itemId, weight, min, max, customModelData, customData);
+        RewardEntry entry = new RewardEntry(itemId, weight, min, max);
         List<RewardEntry> updatedEntries = new ArrayList<>(preset.entries() == null ? List.of() : preset.entries());
         updatedEntries.add(entry);
         FSConfig.setRewardPreset(new RewardPreset(preset.rewardId(), List.copyOf(updatedEntries)));
