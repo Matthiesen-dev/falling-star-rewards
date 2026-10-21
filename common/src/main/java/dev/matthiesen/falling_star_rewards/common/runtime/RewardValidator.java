@@ -1,11 +1,11 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.matthiesen.falling_star_rewards.common.config.def.reward.RewardEntry;
 import dev.matthiesen.falling_star_rewards.common.config.def.RewardPreset;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.TagParser;
+import dev.matthiesen.matthiesen_core.common.utility.item.ItemDecoder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +55,7 @@ public final class RewardValidator {
             return false;
         }
 
-        if (BuiltInRegistries.ITEM.getOptional(itemId).isEmpty()) {
+        if (ItemDecoder.stringToItemStack(entry.itemId()) == ItemStack.EMPTY) {
                     validationMessages.add("Reward entry " + index + " references unknown item: " + entry.itemId());
             return false;
         }
@@ -70,15 +70,6 @@ public final class RewardValidator {
         if (min != entry.minCount() || max != entry.maxCount()) {
                     validationMessages.add("Reward entry " + index + " (" + entry.itemId() + ") has out-of-range counts, normalized to " + min + ".." + max);
             return false;
-        }
-
-        if (entry.customData() != null && !entry.customData().isBlank()) {
-            try {
-                TagParser.parseTag(entry.customData());
-            } catch (CommandSyntaxException e) {
-                        validationMessages.add("Reward entry " + index + " (" + entry.itemId() + ") has invalid customData SNBT: " + e.getMessage());
-                return false;
-            }
         }
 
         return true;

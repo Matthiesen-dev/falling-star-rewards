@@ -1,38 +1,28 @@
 package dev.matthiesen.falling_star_rewards.common.runtime;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.matthiesen.falling_star_rewards.common.FallingStarRewards;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
-import dev.matthiesen.falling_star_rewards.common.config.def.SchedulePreset;
-import dev.matthiesen.falling_star_rewards.common.config.def.VisualsPreset;
+import dev.matthiesen.falling_star_rewards.common.config.def.*;
 import dev.matthiesen.falling_star_rewards.common.config.def.schedule.Conditions;
 import dev.matthiesen.falling_star_rewards.common.interfaces.*;
-import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.ActiveStarDrop;
-import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.EventCommandContext;
-import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.LoadedPreset;
-import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.RolledReward;
+import dev.matthiesen.falling_star_rewards.common.interfaces.runtime.*;
 import dev.matthiesen.matthiesen_core.common.utility.commands.RunSlashCommand;
+import dev.matthiesen.matthiesen_core.common.utility.item.ItemDecoder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.nbt.TagParser;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
@@ -219,10 +209,8 @@ public final class StarEventService {
                 continue;
             }
 
-            ItemStack stack = new ItemStack(rewardItem, rolledReward.count());
-            if (!applyRewardCustomization(stack, rolledReward)) {
-                continue;
-            }
+            ItemStack stack = ItemDecoder.stringToItemStack(rolledReward.itemId());
+            stack.setCount(Math.max(1, rolledReward.count()));
 
             EventCommandContext commandContext = new EventCommandContext(
                     presetConfig,
@@ -410,30 +398,6 @@ public final class StarEventService {
         }
 
         return BuiltInRegistries.ITEM.getOptional(resourceLocation).orElse(null);
-    }
-
-    private boolean applyRewardCustomization(ItemStack stack, RolledReward reward) {
-        Integer customModelData = reward.customModelData();
-        if (customModelData != null) {
-            stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(Math.max(0, customModelData)));
-        }
-
-        String customDataSnbt = reward.customData();
-        if (customDataSnbt == null || customDataSnbt.isBlank()) {
-            return true;
-        }
-
-        try {
-            CompoundTag customDataTag = TagParser.parseTag(customDataSnbt);
-            CustomData.set(DataComponents.CUSTOM_DATA, stack, customDataTag);
-            return true;
-        } catch (CommandSyntaxException syntaxException) {
-            FallingStarRewards.INSTANCE.createErrorLog(
-                    "Failed to parse reward customData SNBT for " + reward.itemId() + ": "
-                            + syntaxException.getMessage(), syntaxException
-            );
-            return false;
-        }
     }
 
     private Entity resolveTrackedEntity(MinecraftServer server, ActiveStarDrop activeDrop, UUID entityId) {
