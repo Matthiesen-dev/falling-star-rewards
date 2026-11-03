@@ -1,10 +1,10 @@
 package dev.matthiesen.falling_star_rewards.common;
 
+import dev.faststats.Token;
 import dev.matthiesen.falling_star_rewards.common.command.FallingStarCommand;
 import dev.matthiesen.falling_star_rewards.common.config.FSConfig;
 import dev.matthiesen.falling_star_rewards.common.registry.PermissionRegistry;
 import dev.matthiesen.falling_star_rewards.common.runtime.RuntimeManager;
-import dev.matthiesen.libs.faststats.Token;
 import dev.matthiesen.matthiesen_core.common.AbstractCommonMod;
 import dev.matthiesen.matthiesen_core.common.api.events.PlatformEvents;
 import dev.matthiesen.matthiesen_core.common.api.events.server.ServerEvent;
@@ -30,10 +30,6 @@ public final class FallingStarRewards extends AbstractCommonMod {
         return source -> PermissionRegistry.checkPermission(source, permission);
     }
 
-    public static String modConfig(String name) {
-        return MOD_ID + "/" + name + ".toml";
-    }
-
     static {
         INSTANCE = new FallingStarRewards();
     }
@@ -46,12 +42,12 @@ public final class FallingStarRewards extends AbstractCommonMod {
     public void initialize() {
         super.initialize();
 
-        registerModConfig(MOD_ID, ModConfigType.STARTUP, FSConfig.PERMISSIONS_START_SPEC, modConfig("permissions"));
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, modConfig("server"));
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.EVENTS_CONFIG_SPEC, modConfig("events"));
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.REWARDS_CONFIG_SPEC, modConfig("rewards"));
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SCHEDULE_CONFIG_SPEC, modConfig("schedules"));
-        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.VISUALS_CONFIG_SPEC, modConfig("visuals"));
+        registerModConfig(MOD_ID, ModConfigType.STARTUP, FSConfig.PERMISSIONS_START_SPEC, modConfigPath("permissions"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SERVER_CONFIG_SPEC, modConfigPath("server"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.EVENTS_CONFIG_SPEC, modConfigPath("events"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.REWARDS_CONFIG_SPEC, modConfigPath("rewards"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.SCHEDULE_CONFIG_SPEC, modConfigPath("schedules"));
+        registerModConfig(MOD_ID, ModConfigType.SERVER, FSConfig.VISUALS_CONFIG_SPEC, modConfigPath("visuals"));
 
         PermissionRegistry.init();
 
